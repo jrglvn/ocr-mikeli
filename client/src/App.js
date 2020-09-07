@@ -7,9 +7,9 @@ function App() {
   const [document, setDocument] = useState(null);
   const inputFile = useRef(null);
 
-  // useEffect(() => {
-  //   document != null && console.log(document);
-  // }, [document]);
+  useEffect(() => {
+    document != null && console.log(document);
+  }, [document]);
 
   return (
     <div className="App">
@@ -42,10 +42,7 @@ function App() {
         select file
       </StyledButton>
 
-      {document != null &&
-        document.map((page, index) => (
-          <PageToCanvas key={index} page={page}></PageToCanvas>
-        ))}
+      {document != null && <PageToCanvas page={document[0]}></PageToCanvas>}
 
       {document != null &&
         document.map((page, index) => (
@@ -79,6 +76,7 @@ const StyledDiv = styled.div`
 
 const PageToCanvas = (props) => {
   const canvasref = useRef(null);
+  const page = props.page.fullTextAnnotation.pages[0];
 
   useEffect(() => {
     var ctx = canvasref.current.getContext("2d");
@@ -86,13 +84,15 @@ const PageToCanvas = (props) => {
     canvasref.current.width = page.width;
     canvasref.current.height = page.height;
 
-    for (const block of page.blocks) {
+    page.blocks.forEach((block, index) => {
       //console.log(`Block confidence: ${block.confidence}`);
       for (const paragraph of block.paragraphs) {
         //console.log(` Paragraph confidence: ${paragraph.confidence}`);
         for (const word of paragraph.words) {
           const symbol_texts = word.symbols.map((symbol) => symbol.text);
           const word_text = symbol_texts.join("");
+          if (word_text.toLowerCase() === "dubai")
+            console.log(word_text, " on block_index: ", index);
           const x = Math.floor(
             word.boundingBox.normalizedVertices[0].x * page.width
           );
@@ -127,19 +127,22 @@ const PageToCanvas = (props) => {
           page.height
       );
 
+      ctx.textBaseline = "top";
+      ctx.font = "8px";
+      ctx.fillStyle = "black";
+      ctx.fillText(index, x + 0.5, y + 0.5 - 10, width);
+
       ctx.beginPath();
       ctx.lineWidth = 1;
       ctx.strokeStyle = generateColor(block.confidence);
       ctx.rect(x + 0.5, y + 0.5, width, height);
       ctx.stroke();
-    }
+    });
 
     // props.page.fullTextAnnotation.pages[0].blocks.forEach((block) => {
     //   console.log(block);
     // });
   }, []);
-
-  const page = props.page.fullTextAnnotation.pages[0];
 
   return (
     <canvas ref={canvasref} style={{ border: "1px solid black" }}></canvas>
