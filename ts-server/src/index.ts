@@ -29,7 +29,7 @@ app.get("/", (req, res) => res.send("Hello World!"));
 app.post("/upload", async (req, res) => {
   const data = await parsePDF({
     file: req.files.pdfFile,
-    options: { kind: "TRADE_LICENSE" },
+    options: { kind: "ESTABLISHMENT_ID" },
   });
   const parsedData = JSON.stringify(data);
   res.send({ sucess: true, parsedData });
