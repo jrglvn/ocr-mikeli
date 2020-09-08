@@ -1,13 +1,20 @@
 "use strict";
 const { ImageAnnotatorClient } = require("@google-cloud/vision").v1;
 
-export async function parsePDF(filePDF) {
+type TInput = {
+  file: { data: any };
+  options: {
+    kind: "TRADE_LICENSE";
+  };
+};
+
+export async function parsePDF(input: TInput) {
   const client = new ImageAnnotatorClient();
 
   async function batchAnnotateFiles() {
     const inputConfig = {
       mimeType: "application/pdf",
-      content: filePDF.data,
+      content: input.file.data,
     };
     const features = [{ type: "DOCUMENT_TEXT_DETECTION" }];
     const fileRequest = {
@@ -30,5 +37,7 @@ export async function parsePDF(filePDF) {
   const result = await batchAnnotateFiles();
   const splitedResult = result[0].fullTextAnnotation.text.split(/\r?\n/);
 
-  return result;
+  return new Promise(async (resolve, reject) => {
+    resolve(splitedResult);
+  });
 }

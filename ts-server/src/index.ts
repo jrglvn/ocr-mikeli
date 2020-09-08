@@ -29,9 +29,14 @@ app.get("/", (req, res) => res.send("Hello World!"));
 app.post("/upload", async (req, res) => {
   req.files.pdfFile.mv("/temp/" + req.files.pdfFile.name);
   console.log("waiting");
-  const data = await parsePDF(req.files.pdfFile);
+  // console.log("req fiiles: ", req.files);
+  const data = await parsePDF({
+    file: req.files.pdfFile,
+    options: { kind: "TRADE_LICENSE" },
+  });
   const parsedData = JSON.stringify(data);
   console.log("after waiting");
+  // console.log("parsed data: ", parsedData);
   res.send({ sucess: true, parsedData });
 });
 
