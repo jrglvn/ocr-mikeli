@@ -42,12 +42,14 @@ function App() {
         select file
       </StyledButton>
 
-      {document != null && <PageToCanvas page={document[0]}></PageToCanvas>}
+      <pre>{JSON.stringify(document, null, 2)}</pre>
 
+      {/* {document != null && <PageToCanvas page={document[0]}></PageToCanvas>} */}
+      {/* 
       {document != null &&
         document.map((page, index) => (
           <PageTextRaw key={index} page={page}></PageTextRaw>
-        ))}
+        ))} */}
     </div>
   );
 }
