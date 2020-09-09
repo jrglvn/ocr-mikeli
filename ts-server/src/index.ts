@@ -27,8 +27,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req, res) => res.send("Hello World!"));
 
 app.post("/upload", async (req, res) => {
+  console.log(req.files);
   const data = await parsePDF({
-    file: req.files.pdfFile,
+    file: req.files[Object.keys(req.files)[0]],
     options: { kind: "ESTABLISHMENT_ID" },
   });
   const parsedData = JSON.stringify(data);

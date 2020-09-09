@@ -2,7 +2,7 @@
 const { ImageAnnotatorClient } = require("@google-cloud/vision").v1;
 
 type TInput = {
-  file: { data: any };
+  file: { data: any; mimetype: "application/pdf" | "image/tiff" | "image/gif" };
   options: {
     kind: "TRADE_LICENSE" | "VAT_CERTIFICATE" | "ESTABLISHMENT_ID";
   };
@@ -13,7 +13,7 @@ export async function parsePDF(input: TInput) {
 
   async function batchAnnotateFiles() {
     const inputConfig = {
-      mimeType: "application/pdf",
+      mimeType: input.file.mimetype,
       content: input.file.data,
     };
     const features = [{ type: "DOCUMENT_TEXT_DETECTION" }];

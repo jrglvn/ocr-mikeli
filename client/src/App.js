@@ -21,7 +21,7 @@ function App() {
         onChange={() => {
           console.log("sending: " + inputFile.current.files[0].name);
           const formData = new FormData();
-          formData.append("pdfFile", inputFile.current.files[0]);
+          formData.append("ocrFile", inputFile.current.files[0]);
           axios({
             url: `http://localhost:3001/upload`,
             method: "POST",
