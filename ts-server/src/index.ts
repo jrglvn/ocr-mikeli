@@ -27,13 +27,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req, res) => res.send("Hello World!"));
 
 app.post("/upload", async (req, res) => {
-  console.log(req.files);
-  const data = await parseDocument({
-    file: req.files[Object.keys(req.files)[0]],
-    options: { kind: "ESTABLISHMENT_ID" },
+  // console.log(req.files);
+  const result = await parseDocument(req.files[Object.keys(req.files)[0]], {
+    kind: "ESTABLISHMENT_ID",
   });
-  const parsedData = JSON.stringify(data);
-  res.send({ sucess: true, parsedData });
+  const parsedResult = JSON.stringify(result);
+  console.log("sending: ", parsedResult);
+  res.send(parsedResult);
 });
 
 app.listen(port, () =>
