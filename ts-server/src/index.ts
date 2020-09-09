@@ -10,7 +10,7 @@ const upload = multer({});
 const port = 3001;
 const API_KEY = "AIzaSyByapk8RRVvkVH4hLkVvvb08cX57H_9uwM";
 
-import { parsePDF } from "./vision";
+import { parseDocument } from "./parser/vision";
 
 // enable files upload
 app.use(
@@ -28,7 +28,7 @@ app.get("/", (req, res) => res.send("Hello World!"));
 
 app.post("/upload", async (req, res) => {
   console.log(req.files);
-  const data = await parsePDF({
+  const data = await parseDocument({
     file: req.files[Object.keys(req.files)[0]],
     options: { kind: "ESTABLISHMENT_ID" },
   });
