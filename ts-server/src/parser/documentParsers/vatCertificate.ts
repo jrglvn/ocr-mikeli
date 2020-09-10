@@ -1,4 +1,4 @@
-import { getDate } from "./shared";
+import { extractAndFormatDate } from "./_shared";
 
 export interface IVatCertificateReturnObject {
   license_number: string;
@@ -26,7 +26,10 @@ export const parseVatCertificate = (
     }
   }
 
-  // #2 get efective registration date, it's usually first occuring date
+  // #2 get efective registration date, it's usually first occuring date & located in first ~20 entries
+  for (let i = 0; i < 30; i++) {
+    vatCertificateInfo.expiry_date = extractAndFormatDate(data[i]);
+  }
 
   return vatCertificateInfo;
   //   return vatCertificateInfo;

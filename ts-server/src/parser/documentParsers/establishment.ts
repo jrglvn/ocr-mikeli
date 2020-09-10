@@ -1,3 +1,5 @@
+import { extractAndFormatDate } from "./_shared";
+
 export interface IEstablishmentReturnObject {
   license_number: string;
   company_name: string;

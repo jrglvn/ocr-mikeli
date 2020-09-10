@@ -1,4 +1,4 @@
-export const getDate = (data: string): string => {
+export const extractAndFormatDate = (data: string): string => {
   let result = "";
 
   let tempResult = data.match(/\d{2,4}[\W\D]+\d{2}[\W\D]+\d{2,4}/);

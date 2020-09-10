@@ -29,11 +29,10 @@ app.get("/", (req, res) => res.send("Hello World!"));
 app.post("/upload", async (req, res) => {
   // console.log(req.files);
   const result = await parseDocument(req.files[Object.keys(req.files)[0]], {
-    kind: "VAT_CERTIFICATE",
+    kind: "TRADE_LICENSE",
   });
-  const parsedResult = JSON.stringify(result);
-  console.log("sending: ", parsedResult);
-  res.send(parsedResult);
+  res.status(200);
+  res.send(result);
 });
 
 app.listen(port, () =>

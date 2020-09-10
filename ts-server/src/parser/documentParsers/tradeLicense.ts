@@ -1,3 +1,5 @@
+import { extractAndFormatDate } from "./_shared";
+
 export interface ITradeLicenseReturnObject {
   license_number: string;
   company_name: string;
@@ -31,11 +33,11 @@ export const parseTradeLicense = (
     }
   }
 
-  const expiryRegex = /^\d{2}[\W\D]\d{2}[\W\D]\d{4}$/;
+  // #2 get efective registration date, it's usually first occuring date & located in first ~20 entries
   for (let i = 0; i < 30; i++) {
-    const temp = data[i].match(expiryRegex);
-    if (temp) {
-      tradeLicense.expiry_date = temp[0];
+    const result = extractAndFormatDate(data[i]);
+    if (result) {
+      tradeLicense.expiry_date = result;
       break;
     }
   }

@@ -4,7 +4,7 @@ import axios from "axios";
 import styled from "styled-components";
 
 function App() {
-  const [document, setDocument] = useState(null);
+  const [document, setDocument] = useState({});
   const inputFile = useRef(null);
 
   useEffect(() => {
@@ -18,24 +18,19 @@ function App() {
         id="file"
         ref={inputFile}
         style={{ display: "none" }}
-        onChange={() => {
+        onChange={async () => {
           console.log("sending: " + inputFile.current.files[0].name);
           const formData = new FormData();
           formData.append("ocrFile", inputFile.current.files[0]);
-          axios({
+          const response = await axios({
             url: `http://localhost:3001/upload`,
             method: "POST",
             data: formData,
             headers: {
               "Content-Type": "application/pdf",
             },
-          })
-            .then((response) => {
-              setDocument(JSON.parse(response.data.parsedData));
-            })
-            .catch((error) => {
-              console.log("error");
-            });
+          });
+          console.log("response: ", setDocument(response.data));
         }}
       />
       <StyledButton onClick={() => inputFile.current.click()}>
