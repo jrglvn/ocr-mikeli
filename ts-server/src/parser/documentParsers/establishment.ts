@@ -15,24 +15,13 @@ export const parseEstablishmentId = (
     expiry_date: "",
   };
 
-  //#1  CAPTURE EXPIRY DATE
-  //search for first date in result array of strings
-  const expiryRegex = /\d{2,4}[\W\D]+\d{2}[\W\D]+\d{2,4}/;
+  // # get efective registration date, it's usually first occuring date & located in first ~20 entries
   for (let i = 0; i < 30; i++) {
-    let temp = data[i].match(expiryRegex);
-    if (temp) {
-      establishmentInfo.expiry_date = temp[0].replace(/[\W\D]+/g, "/"); //replace multiple // or \\
+    const result = extractAndFormatDate(data[i]);
+    if (result) {
+      establishmentInfo.expiry_date = result;
       break;
     }
-  }
-  //because of arabic text direction sometimes google vision returns inversed date order
-  //if years is on first position change order of items inside string
-  if (establishmentInfo.expiry_date.match(/^\d{4}/)) {
-    const date = establishmentInfo.expiry_date.match(
-      /(\d{4})\/(\d{2})\/(\d{2})/
-    );
-    if (date)
-      establishmentInfo.expiry_date = `${date[3]}/${date[2]}/${date[1]}`;
   }
 
   //#2  CAPTURE NAME OF COMPANY

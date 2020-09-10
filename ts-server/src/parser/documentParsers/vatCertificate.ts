@@ -28,7 +28,11 @@ export const parseVatCertificate = (
 
   // #2 get efective registration date, it's usually first occuring date & located in first ~20 entries
   for (let i = 0; i < 30; i++) {
-    vatCertificateInfo.expiry_date = extractAndFormatDate(data[i]);
+    const result = extractAndFormatDate(data[i]);
+    if (result) {
+      vatCertificateInfo.expiry_date = result;
+      break;
+    }
   }
 
   return vatCertificateInfo;

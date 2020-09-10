@@ -28,9 +28,10 @@ app.get("/", (req, res) => res.send("Hello World!"));
 
 app.post("/upload", async (req, res) => {
   // console.log(req.files);
-  const result = await parseDocument(req.files[Object.keys(req.files)[0]], {
-    kind: "TRADE_LICENSE",
-  });
+  const result = await parseDocument(
+    req.files[Object.keys(req.files)[0]],
+    "TRADE_LICENSE"
+  );
   res.status(200);
   res.send(result);
 });

@@ -8,7 +8,7 @@ export async function parseDocument(
     data: any;
     mimetype: "application/pdf" | "image/tiff" | "image/gif";
   },
-  options: { kind: TKindOfDocument }
+  kind: TKindOfDocument
 ) {
   const client = new ImageAnnotatorClient();
 
@@ -32,8 +32,5 @@ export async function parseDocument(
 
   const result = await batchAnnotateFiles();
   const textToArray = result[0].fullTextAnnotation.text.split(/\r?\n/);
-
-  return dispatch(options.kind, textToArray);
-
-  // return result;
+  return [dispatch(kind, textToArray), result];
 }
