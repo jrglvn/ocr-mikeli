@@ -6,13 +6,17 @@ import {
   ITradeLicenseReturnObject,
   parseTradeLicense,
 } from "./documentParsers/tradeLicense";
+import {
+  IVatCertificateReturnObject,
+  parseVatCertificate,
+} from "./documentParsers/vatCertificate";
 
 export type TKindOfDocument =
   | "TRADE_LICENSE"
   | "VAT_CERTIFICATE"
   | "ESTABLISHMENT_ID";
 
-export const parse = (
+export const dispatch = (
   kind: TKindOfDocument,
   data: Array<string>
 ): IEstablishmentReturnObject | ITradeLicenseReturnObject | any => {
@@ -21,5 +25,7 @@ export const parse = (
       return parseTradeLicense(data);
     case "ESTABLISHMENT_ID":
       return parseEstablishmentId(data);
+    case "VAT_CERTIFICATE":
+      return parseVatCertificate(data);
   }
 };

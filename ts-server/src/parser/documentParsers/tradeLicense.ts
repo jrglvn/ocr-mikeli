@@ -1,16 +1,16 @@
 export interface ITradeLicenseReturnObject {
-  license_number: string | null;
-  company_name: string | null;
-  expiry_date: string | null;
+  license_number: string;
+  company_name: string;
+  expiry_date: string;
 }
 
 export const parseTradeLicense = (
   data: Array<string>
 ): ITradeLicenseReturnObject => {
   const tradeLicense = {
-    license_number: null,
-    company_name: null,
-    expiry_date: null,
+    license_number: "",
+    company_name: "",
+    expiry_date: "",
   } as ITradeLicenseReturnObject;
 
   const licenseRegex = /^\d{5,6}$/;

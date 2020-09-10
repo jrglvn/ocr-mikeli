@@ -1,7 +1,7 @@
 "use strict";
 const { ImageAnnotatorClient } = require("@google-cloud/vision").v1;
 
-import { TKindOfDocument, parse } from ".";
+import { TKindOfDocument, dispatch } from ".";
 
 export async function parseDocument(
   file: {
@@ -31,9 +31,9 @@ export async function parseDocument(
   }
 
   const result = await batchAnnotateFiles();
-  const fullTextArray = result[0].fullTextAnnotation.text.split(/\r?\n/);
+  const textToArray = result[0].fullTextAnnotation.text.split(/\r?\n/);
 
-  return parse(options.kind, fullTextArray);
+  return dispatch(options.kind, textToArray);
 
   // return result;
 }
