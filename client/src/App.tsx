@@ -84,10 +84,20 @@ type TElement = {
   confidence: number;
 };
 
+type Tpc = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  confidence: number;
+  index: number;
+};
+
 const PageToCanvas = (props) => {
   const canvasref = useRef(null);
   const divAsPageContainer = useRef<any>(null);
   const page = props.page.fullTextAnnotation.pages[0];
+  const [paragraphContaines, setParagraphContainers] = useState<Array<any>>([]);
   const [elements, setElements] = useState<Array<TElement>>([]);
   const [pageDimensions, setPageDimensions] = useState<{
     width: number;
@@ -103,7 +113,7 @@ const PageToCanvas = (props) => {
 
     page.blocks.forEach((block, index) => {
       //console.log(`Block confidence: ${block.confidence}`);
-      for (const paragraph of block.paragraphs) {
+      block.paragraphs.forEach((paragraph) => {
         // let tempElementText = "";
         //console.log(` Paragraph confidence: ${paragraph.confidence}`);
         for (const word of paragraph.words) {
@@ -133,11 +143,37 @@ const PageToCanvas = (props) => {
             left: x,
             width: width,
             height: height,
-            confidence: block.confidence,
+            confidence: word.confidence,
           } as TElement);
           setElements([...elements]);
         }
-      }
+
+        const x = Math.floor(
+          paragraph.boundingBox.normalizedVertices[0].x * page.width
+        );
+        const y = Math.floor(
+          paragraph.boundingBox.normalizedVertices[0].y * page.height
+        );
+        const width = Math.floor(
+          (paragraph.boundingBox.normalizedVertices[2].x -
+            paragraph.boundingBox.normalizedVertices[0].x) *
+            page.width
+        );
+        const height = Math.floor(
+          (paragraph.boundingBox.normalizedVertices[2].y -
+            paragraph.boundingBox.normalizedVertices[0].y) *
+            page.height
+        );
+        paragraphContaines.push({
+          top: y,
+          left: x,
+          width: width,
+          height: height,
+          confidence: paragraph.confidence,
+          index,
+        } as Tpc);
+        setParagraphContainers([...paragraphContaines]);
+      });
       // ctx.textBaseline = "top";
       // ctx.font = "8px";
       // ctx.fillStyle = "black";
@@ -169,6 +205,24 @@ const PageToCanvas = (props) => {
         border: "thin ridge black",
       }}
     >
+      {paragraphContaines.map((p, index) => (
+        <fieldset
+          key={index}
+          style={{
+            position: "absolute",
+            top: p.top + "px",
+            left: p.left + "px",
+            width: p.width + "px",
+            height: p.height + "px",
+            border: "1px solid black",
+            borderColor: generateColor(p.confidence),
+          }}
+        >
+          <legend style={{ transform: "translateY(-5px)", fontWeight: "bold" }}>
+            {p.index}
+          </legend>
+        </fieldset>
+      ))}
       {elements.map((b, index) => (
         <div
           key={index}
@@ -178,8 +232,6 @@ const PageToCanvas = (props) => {
             left: b.left + "px",
             width: b.width + "px",
             height: b.height + "px",
-            border: "1px solid black",
-            borderColor: generateColor(b.confidence),
           }}
         >
           {b.text}
