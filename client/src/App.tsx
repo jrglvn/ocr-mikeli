@@ -43,7 +43,9 @@ function App() {
 
       {/* <pre>{document && JSON.stringify(document![0], null, 2)}</pre> */}
 
-      {document != null && <PageToCanvas page={document![1][0]}></PageToCanvas>}
+      {document !== null && (
+        <PageToCanvas page={document![1][0]}></PageToCanvas>
+      )}
 
       {/* {document != null &&
         document.map((page, index) => (
@@ -91,13 +93,16 @@ type Tpc = {
   height: number;
   confidence: number;
   index: number;
+  text: string;
 };
 
 const PageToCanvas = (props) => {
   const canvasref = useRef(null);
   const divAsPageContainer = useRef<any>(null);
   const page = props.page.fullTextAnnotation.pages[0];
-  const [paragraphContaines, setParagraphContainers] = useState<Array<any>>([]);
+  const [paragraphContainers, setParagraphContainers] = useState<Array<any>>(
+    []
+  );
   const [elements, setElements] = useState<Array<TElement>>([]);
   const [pageDimensions, setPageDimensions] = useState<{
     width: number;
@@ -114,7 +119,7 @@ const PageToCanvas = (props) => {
     page.blocks.forEach((block, index) => {
       //console.log(`Block confidence: ${block.confidence}`);
       block.paragraphs.forEach((paragraph) => {
-        // let tempElementText = "";
+        let paragraphText = "";
         //console.log(` Paragraph confidence: ${paragraph.confidence}`);
         for (const word of paragraph.words) {
           const symbol_texts = word.symbols.map((symbol) => symbol.text);
@@ -146,6 +151,7 @@ const PageToCanvas = (props) => {
             confidence: word.confidence,
           } as TElement);
           setElements([...elements]);
+          paragraphText = paragraphText + " " + word_text;
         }
 
         const x = Math.floor(
@@ -164,15 +170,16 @@ const PageToCanvas = (props) => {
             paragraph.boundingBox.normalizedVertices[0].y) *
             page.height
         );
-        paragraphContaines.push({
+        paragraphContainers.push({
           top: y,
           left: x,
           width: width,
           height: height,
           confidence: paragraph.confidence,
           index,
+          text: paragraphText,
         } as Tpc);
-        setParagraphContainers([...paragraphContaines]);
+        setParagraphContainers([...paragraphContainers]);
       });
       // ctx.textBaseline = "top";
       // ctx.font = "8px";
@@ -191,6 +198,16 @@ const PageToCanvas = (props) => {
     // });
   }, []);
 
+  useEffect(() => {
+    const regex = /full english legal name/i;
+    let result;
+    for (let i = 0; i < paragraphContainers.length; i++) {
+      result = paragraphContainers[i].text.match(regex);
+      if (result) break;
+    }
+    console.log("regex result: ", result);
+  }, [paragraphContainers]);
+
   {
     /* <canvas ref={canvasref} style={{ border: "1px solid black" }}></canvas> */
   }
@@ -205,7 +222,7 @@ const PageToCanvas = (props) => {
         border: "thin ridge black",
       }}
     >
-      {paragraphContaines.map((p, index) => (
+      {paragraphContainers.map((p, index) => (
         <fieldset
           key={index}
           style={{
@@ -237,6 +254,11 @@ const PageToCanvas = (props) => {
           {b.text}
         </div>
       ))}
+      <div style={{ position: "absolute", top: pageDimensions?.height }}>
+        {paragraphContainers.map((p) => (
+          <div>{p.text}</div>
+        ))}
+      </div>
     </div>
   );
 };
