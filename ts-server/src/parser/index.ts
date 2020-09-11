@@ -18,7 +18,8 @@ export type TKindOfDocument =
 
 export const dispatch = (
   kind: TKindOfDocument,
-  data: Array<string>
+  data: Array<string>,
+  rawResult: any
 ): IEstablishmentReturnObject | ITradeLicenseReturnObject | any => {
   switch (kind) {
     case "TRADE_LICENSE":
@@ -26,6 +27,6 @@ export const dispatch = (
     case "ESTABLISHMENT_ID":
       return parseEstablishmentId(data);
     case "VAT_CERTIFICATE":
-      return parseVatCertificate(data);
+      return parseVatCertificate(data, rawResult);
   }
 };
