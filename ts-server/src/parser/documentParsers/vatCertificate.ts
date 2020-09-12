@@ -18,7 +18,7 @@ export const parseVatCertificate = (
   };
 
   // #1 get tax registration number (usually its in first 20 entries)
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < data.length; i++) {
     const temp = data[i].match(/\d{15}/);
     if (temp) {
       vatCertificateInfo.tax_registration_number = temp[0];
@@ -27,7 +27,7 @@ export const parseVatCertificate = (
   }
 
   // #2 get efective registration date, it's usually first occuring date & located in first ~20 entries
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < data.length; i++) {
     const result = extractAndFormatDate(data[i]);
     if (result) {
       vatCertificateInfo.expiry_date = result;
@@ -44,17 +44,22 @@ export const parseVatCertificate = (
 
   //find average Y of word: "english" bounding box
   const blocks = rawResult.pages[0].blocks;
-  let yAverage: number = 0;
+  let topOfBox: number = 0;
+  let bottomOfBox: number = 0;
+
   blocks.forEach((block) => {
     block.paragraphs.forEach((paragraph) => {
       paragraph.words.forEach((word) => {
         const word_symbols = word.symbols.map((symbol) => symbol.text);
         const word_text = word_symbols.join("");
 
-        if (word_text.match(/english/i) && !!!yAverage) {
-          word.boundingBox.normalizedVertices.forEach(
-            (v) => (yAverage += v.y / 4)
-          );
+        if (word_text.match(/english/i) && !!!topOfBox) {
+          topOfBox += word.boundingBox.normalizedVertices[0].y / 2;
+          topOfBox += word.boundingBox.normalizedVertices[1].y / 2;
+        }
+        if (word_text.match(/address/) && !!!bottomOfBox) {
+          bottomOfBox += word.boundingBox.normalizedVertices[0].y / 2;
+          bottomOfBox += word.boundingBox.normalizedVertices[1].y / 2;
         }
       });
     });
@@ -62,31 +67,47 @@ export const parseVatCertificate = (
 
   // find block that intersects with averageYof... and x=.5 (center of page)
   let intersectingBlock: any;
-  blocks.forEach((block) => {
-    if (
-      block.boundingBox.normalizedVertices[0].x < 0.5 &&
-      block.boundingBox.normalizedVertices[1].x > 0.5 &&
-      block.boundingBox.normalizedVertices[1].y < yAverage &&
-      block.boundingBox.normalizedVertices[2].y > yAverage
-    )
+  const yAverage = (topOfBox + bottomOfBox) / 2;
+  blocks.forEach((block, index) => {
+    const left =
+      (block.boundingBox.normalizedVertices[0].x +
+        block.boundingBox.normalizedVertices[3].x) /
+      2;
+    const right =
+      (block.boundingBox.normalizedVertices[1].x +
+        block.boundingBox.normalizedVertices[2].x) /
+      2;
+    const top =
+      (block.boundingBox.normalizedVertices[0].y +
+        block.boundingBox.normalizedVertices[1].y) /
+      2;
+    const bottom =
+      (block.boundingBox.normalizedVertices[2].y +
+        block.boundingBox.normalizedVertices[3].y) /
+      2;
+
+    if (left < 0.5 && right > 0.5 && top <= yAverage && bottom >= yAverage)
       intersectingBlock = block;
   });
 
-  //basicaly in intersecting block check for words that lay on same axis as word "full english legal name"
-  intersectingBlock.paragraphs.forEach((paragraph) => {
-    paragraph.words.forEach((word) => {
-      if (
-        word.boundingBox.normalizedVertices[1].y <= yAverage &&
-        word.boundingBox.normalizedVertices[2].y >= yAverage
-      ) {
-        const symbol_texts = word.symbols.map((symbol) => symbol.text);
-        const word_text = symbol_texts.join("");
-        vatCertificateInfo.company_name =
-          vatCertificateInfo.company_name + " " + word_text;
-      }
+  //basicaly in intersecting block check for words that lay on same axis RANGE as word "full english legal name" down to upper border of "registered address"
+  if (intersectingBlock) {
+    intersectingBlock.paragraphs.forEach((paragraph) => {
+      paragraph.words.forEach((word) => {
+        const wordAvgY =
+          (word.boundingBox.normalizedVertices[1].y +
+            word.boundingBox.normalizedVertices[2].y) /
+          2;
+        if (wordAvgY > topOfBox && wordAvgY < bottomOfBox) {
+          const symbol_texts = word.symbols.map((symbol) => symbol.text);
+          const word_text = symbol_texts.join("");
+          vatCertificateInfo.company_name =
+            vatCertificateInfo.company_name + " " + word_text;
+        }
+      });
     });
-  });
-  vatCertificateInfo.company_name = vatCertificateInfo.company_name.trim();
+    vatCertificateInfo.company_name = vatCertificateInfo.company_name.trim();
+  }
 
   return vatCertificateInfo;
   //   return vatCertificateInfo;

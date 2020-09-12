@@ -1,7 +1,6 @@
 import { extractAndFormatDate } from "./_shared";
 
 export interface IEstablishmentReturnObject {
-  license_number: string;
   company_name: string;
   expiry_date: string;
 }
@@ -11,12 +10,11 @@ export const parseEstablishmentId = (
 ): IEstablishmentReturnObject => {
   let establishmentInfo = {
     company_name: "",
-    license_number: "",
     expiry_date: "",
   };
 
   // # get efective registration date, it's usually first occuring date & located in first ~20 entries
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < data.length; i++) {
     const result = extractAndFormatDate(data[i]);
     if (result) {
       establishmentInfo.expiry_date = result;
@@ -25,8 +23,9 @@ export const parseEstablishmentId = (
   }
 
   //#2  CAPTURE NAME OF COMPANY
-  for (let i = 0; i < 20; i++) {
-    let temp = data[i].match(/Name\s*\:\s*(.*)/);
+  // if capture group next to name is empty, company name is in next line
+  for (let i = 0; i < data.length; i++) {
+    let temp = data[i].match(/Name\s*\:\s*(.*)/i);
     if (temp) {
       temp[1] !== ""
         ? (establishmentInfo.company_name = temp[1])
