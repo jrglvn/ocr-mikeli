@@ -21,7 +21,7 @@ export async function parseDocument(
     const fileRequest = {
       inputConfig: inputConfig,
       features: features,
-      pages: [1],
+      pages: [1, 2, 3, 4, 5],
     };
     const request = {
       requests: [fileRequest],

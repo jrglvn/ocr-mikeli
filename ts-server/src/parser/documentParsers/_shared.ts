@@ -16,3 +16,13 @@ export const extractAndFormatDate = (data: string): string => {
 
   return result;
 };
+
+export const extractVatNumber = (data: string): string => {
+  let result = "";
+  const temp = data.match(/\d{15}/);
+  if (temp) {
+    result = temp[0];
+  }
+
+  return result;
+};

@@ -1,23 +1,23 @@
 import { extractAndFormatDate } from "./_shared";
 
-export interface IEstablishmentReturnObject {
+export interface IEstablishment {
   company_name: string;
   expiry_date: string;
+  establishment_id: string;
 }
 
-export const parseEstablishmentId = (
-  data: Array<string>
-): IEstablishmentReturnObject => {
-  let establishmentInfo = {
+export const parseEstablishmentId = (data: Array<string>): IEstablishment => {
+  let returnObject = {
     company_name: "",
     expiry_date: "",
+    establishment_id: "",
   };
 
   // # get efective registration date, it's usually first occuring date & located in first ~20 entries
   for (let i = 0; i < data.length; i++) {
     const result = extractAndFormatDate(data[i]);
     if (result) {
-      establishmentInfo.expiry_date = result;
+      returnObject.expiry_date = result;
       break;
     }
   }
@@ -28,13 +28,20 @@ export const parseEstablishmentId = (
     let temp = data[i].match(/Name\s*\:\s*(.*)/i);
     if (temp) {
       temp[1] !== ""
-        ? (establishmentInfo.company_name = temp[1])
-        : (establishmentInfo.company_name = data[i + 1]);
+        ? (returnObject.company_name = temp[1])
+        : (returnObject.company_name = data[i + 1]);
       break;
     }
   }
 
-  //#3 capture license_id of company
+  //#3 capture establishment_id of company
+  for (let i = 0; i < data.length; i++) {
+    let temp = data[i].match(/\d[\W\D]\d[\W\D]\d{6}/);
+    if (temp) {
+      returnObject.establishment_id = temp[0];
+      break;
+    }
+  }
 
-  return establishmentInfo;
+  return returnObject;
 };

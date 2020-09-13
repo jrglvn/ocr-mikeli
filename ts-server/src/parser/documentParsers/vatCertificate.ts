@@ -1,6 +1,6 @@
-import { extractAndFormatDate } from "./_shared";
+import { extractAndFormatDate, extractVatNumber } from "./_shared";
 
-export interface IVatCertificateReturnObject {
+export interface IVat {
   license_number: string;
   company_name: string;
   expiry_date: string;
@@ -10,8 +10,8 @@ export interface IVatCertificateReturnObject {
 export const parseVatCertificate = (
   data: Array<string>,
   rawResult: any
-): IVatCertificateReturnObject | any => {
-  let vatCertificateInfo = {
+): IVat | any => {
+  let returnObject = {
     company_name: "",
     expiry_date: "",
     tax_registration_number: "",
@@ -19,18 +19,15 @@ export const parseVatCertificate = (
 
   // #1 get tax registration number (usually its in first 20 entries)
   for (let i = 0; i < data.length; i++) {
-    const temp = data[i].match(/\d{15}/);
-    if (temp) {
-      vatCertificateInfo.tax_registration_number = temp[0];
-      break;
-    }
+    returnObject.tax_registration_number = extractVatNumber(data[i]);
+    if (returnObject.tax_registration_number) break;
   }
 
   // #2 get efective registration date, it's usually first occuring date & located in first ~20 entries
   for (let i = 0; i < data.length; i++) {
     const result = extractAndFormatDate(data[i]);
     if (result) {
-      vatCertificateInfo.expiry_date = result;
+      returnObject.expiry_date = result;
       break;
     }
   }
@@ -101,14 +98,14 @@ export const parseVatCertificate = (
         if (wordAvgY > topOfBox && wordAvgY < bottomOfBox) {
           const symbol_texts = word.symbols.map((symbol) => symbol.text);
           const word_text = symbol_texts.join("");
-          vatCertificateInfo.company_name =
-            vatCertificateInfo.company_name + " " + word_text;
+          returnObject.company_name =
+            returnObject.company_name + " " + word_text;
         }
       });
     });
-    vatCertificateInfo.company_name = vatCertificateInfo.company_name.trim();
+    returnObject.company_name = returnObject.company_name.trim();
   }
 
-  return vatCertificateInfo;
-  //   return vatCertificateInfo;
+  return returnObject;
+  //   return returnObject;
 };
