@@ -1,4 +1,9 @@
-import { extractAndFormatDate, extractVatNumber } from "./_shared";
+import {
+  extractAndFormatDate,
+  extractVatNumber,
+  findWordObject,
+  getBoundingBox,
+} from "./_shared";
 
 export interface IKyc {
   tax_registration_number: string;
@@ -32,19 +37,22 @@ export const parseKyc = (data: Array<string>, rawResult: any): IKyc | any => {
     }
   }
 
-  //#2 expiry & sign date
-  const dateRegex = /\d{1,2}\-[A-Z]\w{2}\-\d{4}/i;
-  for (let i = 0; i < data.length; i++) {
-    const temp = data[i].match(dateRegex);
-    if (temp) {
-      returnObject.expiry_date
-        ? (returnObject.sign_date = temp[0])
-        : (returnObject.expiry_date = temp[0]);
-    }
-  }
+  //#2 dates, find word object containing dates, if word bounding box is in top of page => date is expiry date,
+  //otherwise it's assign date
+  const dates: Array<any> = findWordObject(
+    rawResult,
+    /\d{1,2}[\-\s]+[A-Z]\w{2}[\-\s]+\d{4}/
+  );
+
+  dates.forEach((date) => {
+    const boundingBox = getBoundingBox(rawResult, date.element);
+    boundingBox.avgYnormalized < 0.5
+      ? (returnObject.expiry_date = date.text.replace(/\s/g, ""))
+      : (returnObject.sign_date = date.text.replace(/\s/g, ""));
+  });
 
   //#3 license number
-  const licenseRegex = /\d{5,6}/i;
+  const licenseRegex = /\d{5,6}/;
   for (let i = 0; i < data.length; i++) {
     const temp = data[i].match(licenseRegex);
     if (temp) {
@@ -54,7 +62,7 @@ export const parseKyc = (data: Array<string>, rawResult: any): IKyc | any => {
   }
 
   //#3 TRN
-  const trnRegex = /\d{15}/i;
+  const trnRegex = /\d{15}/;
   for (let i = 0; i < data.length; i++) {
     const temp = data[i].match(trnRegex);
     if (temp) {
@@ -101,6 +109,8 @@ export const parseKyc = (data: Array<string>, rawResult: any): IKyc | any => {
       break;
     }
   }
+
+  //#
 
   return returnObject;
 };
