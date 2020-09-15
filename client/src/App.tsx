@@ -1,22 +1,24 @@
 import React, { useState, useRef, useEffect } from "react";
-import "./App.css";
 import axios from "axios";
 import styled from "styled-components";
 
 function App() {
-  const [document, setDocument] = useState(null);
   const inputFile = useRef<any>(null);
+  const [responseArray, setResponseArray] = useState<any>();
+  const [pages, setPages] = useState<Array<any>>();
 
   useEffect(() => {
-    document != null && console.log(document);
-  }, [document]);
-
-  useEffect(() => {
-    setDocument(JSON.parse(localStorage.getItem("ocr")!));
+    setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
   }, []);
+  useEffect(() => {
+    if (responseArray && responseArray.length) {
+      setPages(responseArray[1][0].fullTextAnnotation.pages);
+      console.log(responseArray);
+    }
+  }, [responseArray]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <StyledApp>
       <input
         type="file"
         id="file"
@@ -33,196 +35,85 @@ function App() {
               "Content-Type": "application/pdf",
             },
           });
-          setDocument(response.data);
           localStorage.setItem("ocr", JSON.stringify(response.data));
+          setResponseArray(response.data);
         }}
       />
-      <StyledButton onClick={() => inputFile.current.click()}>
-        select file
-      </StyledButton>
+      <button onClick={() => inputFile.current.click()}>select file</button>
 
-      {/* <pre>{document && JSON.stringify(document![0], null, 2)}</pre> */}
+      <pre style={{ background: "#eee", padding: "10px" }}>
+        {responseArray && JSON.stringify(responseArray[0], null, 2)}
+      </pre>
 
-      {document !== null && (
-        <PageToCanvas page={document![1][0]}></PageToCanvas>
-      )}
+      {pages?.map((page, index) => (
+        <DataToPage key={index} page={page} />
+      ))}
 
-      {/* {document != null &&
-        document.map((page, index) => (
-          <PageTextRaw key={index} page={page}></PageTextRaw>
-        ))} */}
-    </div>
+      <div>
+        {responseArray &&
+          responseArray.length &&
+          responseArray[1][0].fullTextAnnotation.text
+            .toString()
+            .split(/\r?\n/)
+            .map((line, index) => <div key={index}>{line}</div>)}
+      </div>
+    </StyledApp>
   );
 }
 
-const StyledButton = styled.button`
-  background-color: #555;
-  border-radius: 4px;
-  color: white;
-  border: none;
-  width: 6rem;
-  padding: 1rem;
-  &:hover {
-    cursor: pointer;
-    background-color: #666;
-    transform: scale(1.02);
-  }
-`;
-
-const StyledDiv = styled.div`
-  padding: 1rem;
-  font-size: 0.8rem;
-  border: 1px solid black;
-  width: 60%;
-  color: white;
-`;
-
 type TElement = {
-  text: string;
   top: number;
   left: number;
   width: number;
   height: number;
-  confidence: number;
+  confidence?: number;
+  index?: number;
+  text?: string;
 };
 
-type Tpc = {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  confidence: number;
-  index: number;
-  text: string;
-};
-
-const PageToCanvas = (props) => {
-  const canvasref = useRef(null);
-  const divAsPageContainer = useRef<any>(null);
-  const page = props.page.fullTextAnnotation.pages[0];
-  const [paragraphContainers, setParagraphContainers] = useState<Array<any>>(
-    []
-  );
-  const [elements, setElements] = useState<Array<TElement>>([]);
-  const [pageDimensions, setPageDimensions] = useState<{
-    width: number;
-    height: number;
-  }>();
-
+const DataToPage = ({ page }) => {
+  const [words, setWords] = useState<Array<TElement>>([]);
+  const [paragraphs, setParagraphs] = useState<Array<TElement>>([]);
   useEffect(() => {
-    // var ctx = canvasref.current.getContext("2d");
-
-    // canvasref.current.width = page.width;
-    // canvasref.current.height = page.height;
-    setPageDimensions({ height: page.height, width: page.width });
-
     page.blocks.forEach((block, index) => {
-      //console.log(`Block confidence: ${block.confidence}`);
       block.paragraphs.forEach((paragraph) => {
         let paragraphText = "";
-        //console.log(` Paragraph confidence: ${paragraph.confidence}`);
         for (const word of paragraph.words) {
           const symbol_texts = word.symbols.map((symbol) => symbol.text);
           const word_text = symbol_texts.join("");
-          // tempElementText = tempElementText + " " + word_text;
 
-          const x = Math.floor(
-            word.boundingBox.normalizedVertices[0].x * page.width
-          );
-          const y = Math.floor(
-            word.boundingBox.normalizedVertices[0].y * page.height
-          );
-          const width = Math.floor(
-            (word.boundingBox.normalizedVertices[2].x -
-              word.boundingBox.normalizedVertices[0].x) *
-              page.width
-          );
-          const height = Math.floor(
-            (word.boundingBox.normalizedVertices[2].y -
-              word.boundingBox.normalizedVertices[0].y) *
-              page.height
-          );
-          elements.push({
+          words.push({
             text: word_text,
-            top: y,
-            left: x,
-            width: width,
-            height: height,
             confidence: word.confidence,
+            ...getBoundingBox(word, page),
           } as TElement);
-          setElements([...elements]);
+          setWords([...words]);
           paragraphText = paragraphText + " " + word_text;
         }
 
-        const x = Math.floor(
-          paragraph.boundingBox.normalizedVertices[0].x * page.width
-        );
-        const y = Math.floor(
-          paragraph.boundingBox.normalizedVertices[0].y * page.height
-        );
-        const width = Math.floor(
-          (paragraph.boundingBox.normalizedVertices[2].x -
-            paragraph.boundingBox.normalizedVertices[0].x) *
-            page.width
-        );
-        const height = Math.floor(
-          (paragraph.boundingBox.normalizedVertices[2].y -
-            paragraph.boundingBox.normalizedVertices[0].y) *
-            page.height
-        );
-        paragraphContainers.push({
-          top: y,
-          left: x,
-          width: width,
-          height: height,
+        paragraphs.push({
+          text: paragraphText,
           confidence: paragraph.confidence,
           index,
-          text: paragraphText,
-        } as Tpc);
-        setParagraphContainers([...paragraphContainers]);
+          ...getBoundingBox(paragraph, page),
+        } as TElement);
+        setParagraphs([...paragraphs]);
       });
-      // ctx.textBaseline = "top";
-      // ctx.font = "8px";
-      // ctx.fillStyle = "black";
-      // ctx.fillText(index, x + 0.5, y + 0.5 - 10, width);
-
-      // ctx.beginPath();
-      // ctx.lineWidth = 1;
-      // ctx.strokeStyle = generateColor(block.confidence);
-      // ctx.rect(x + 0.5, y + 0.5, width, height);
-      // ctx.stroke();
     });
-
-    // props.page.fullTextAnnotation.pages[0].elements.forEach((block) => {
-    //   console.log(block);
-    // });
   }, []);
 
-  useEffect(() => {
-    const regex = /full english legal name/i;
-    let result;
-    for (let i = 0; i < paragraphContainers.length; i++) {
-      result = paragraphContainers[i].text.match(regex);
-      if (result) break;
-    }
-    console.log("regex result: ", result);
-  }, [paragraphContainers]);
-
-  {
-    /* <canvas ref={canvasref} style={{ border: "1px solid black" }}></canvas> */
-  }
   return (
     <div
       style={{
         position: "relative",
-        width: pageDimensions?.width + "px",
-        height: pageDimensions?.height + "px",
-        fontSize: "7px",
+        width: page.width + "px",
+        height: page.height + "px",
+        fontSize: "10px",
         background: "#ddd",
-        border: "thin ridge black",
+        border: "medium ridge black",
       }}
     >
-      {paragraphContainers.map((p, index) => (
+      {paragraphs.map((p, index) => (
         <fieldset
           key={index}
           style={{
@@ -240,31 +131,22 @@ const PageToCanvas = (props) => {
           </legend>
         </fieldset>
       ))}
-      {elements.map((b, index) => (
+      {words.map((word, index) => (
         <div
           key={index}
           style={{
             position: "absolute",
-            top: b.top + "px",
-            left: b.left + "px",
-            width: b.width + "px",
-            height: b.height + "px",
+            top: Math.floor(word.top * page.height) + "px",
+            left: Math.floor(word.left * page.width) + "px",
+            width: Math.floor(word.width * page.width) + "px",
+            height: Math.floor(word.height * page.height) + "px",
           }}
         >
-          {b.text}
+          {word.text}
         </div>
       ))}
-      <div style={{ position: "absolute", top: pageDimensions?.height }}>
-        {paragraphContainers.map((p) => (
-          <div>{p.text}</div>
-        ))}
-      </div>
     </div>
   );
-};
-
-const PageTextRaw = (props) => {
-  return <StyledDiv>{props.page.fullTextAnnotation.text}</StyledDiv>;
 };
 
 const generateColor = (confidence) => {
@@ -280,3 +162,147 @@ export default App;
 
 //[\u0621-\u064A]+
 //arabic letters regex
+
+const StyledApp = styled.div`
+  box-sizing: border-box;
+  & * {
+    box-sizing: border-box;
+  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  & button {
+    background: #0275d8;
+    border: none;
+    outline: none;
+    color: white;
+    padding: 1rem;
+  }
+  & fieldset {
+    padding: 0;
+    margin: 0;
+  }
+`;
+
+export const getBoundingBox = (
+  element: any,
+  page: any
+): {
+  top;
+  right;
+  bottom;
+  left;
+  avgX;
+  avgY;
+  width;
+  height;
+} => {
+  let result = {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    avgX: 0,
+    avgY: 0,
+    width: 0,
+    height: 0,
+  };
+
+  const vertices: Array<any> = element.boundingBox.normalizedVertices.length
+    ? element.boundingBox.normalizedVertices
+    : element.boundingBox.vertices;
+
+  const factor = element.boundingBox.normalizedVertices.length
+    ? { width: 1, height: 1 }
+    : { width: page.width, height: page.height };
+
+  result.top = Math.min(vertices[0].y, vertices[1].y) / factor.height;
+  result.right = Math.max(vertices[1].x, vertices[2].x) / factor.width;
+  result.bottom = Math.max(vertices[2].y, vertices[3].y) / factor.height;
+  result.left = Math.min(vertices[3].x, vertices[0].x) / factor.width;
+  result.avgX = (result.left + result.right) / 2;
+  result.avgY = (result.top + result.bottom) / 2;
+
+  result.width = result.right - result.left;
+  result.height = result.bottom - result.top;
+
+  return result;
+};
+
+export const findParagrapshContainingText = (
+  pages: any,
+  regex: RegExp
+): Array<{ paragraph: any; page: any }> => {
+  const paragraphObjects: Array<{ paragraph: any; page: any }> = [];
+
+  pages.forEach((page) => {
+    page.blocks.forEach((block) => {
+      block.paragraphs.forEach((paragraph) => {
+        let paragraph_text = "";
+        paragraph.words.forEach((word) => {
+          paragraph_text = paragraph_text + " " + extractTextFromWord(word);
+        });
+        const regexResult = paragraph_text.match(regex);
+        if (regexResult && regexResult[0]) {
+          paragraphObjects.push({ paragraph, page });
+        }
+      });
+    });
+  });
+
+  return paragraphObjects;
+};
+
+export const findWordsContainingText = (
+  pages: any,
+  regex: RegExp
+): Array<{ word: any; page: any }> => {
+  const wordObjects: Array<any> = [];
+
+  pages.forEach((page) => {
+    page.blocks.forEach((block) => {
+      block.paragraphs.forEach((paragraph) => {
+        paragraph.words.forEach((word) => {
+          const word_text = extractTextFromWord(word);
+          const regexResult = word_text.match(regex);
+          if (regexResult && regexResult[0]) {
+            wordObjects.push({ word, page });
+          }
+        });
+      });
+    });
+  });
+
+  return wordObjects;
+};
+
+export const extractTextFromWord = (word) => {
+  const word_symbols = word.symbols.map((symbol) => symbol.text);
+  return word_symbols.join("");
+};
+
+const findWordsInBounds = (
+  page,
+  { x1, x2, y1, y2 }: { x1; x2; y1; y2: number }
+): Array<any> => {
+  const wordsInBound: Array<any> = [];
+  page.blocks.forEach((block) => {
+    block.paragraphs.forEach((paragraph) => {
+      paragraph.words.forEach((word) => {
+        const wordBox = getBoundingBox(word, page);
+        if (
+          wordBox.avgX > x1 &&
+          wordBox.avgX < x2 &&
+          wordBox.avgY > y1 &&
+          wordBox.avgY < y2
+        ) {
+          console.log("x: ", wordBox.avgX, "y: ", wordBox.avgY);
+          wordsInBound.push(word);
+        }
+      });
+    });
+  });
+  return wordsInBound;
+};
