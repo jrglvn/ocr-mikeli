@@ -1,6 +1,7 @@
 import { extractAndFormatDate, extractVatNumber } from "./_shared";
 
 export interface IVat {
+  is_valid: true;
   license_number: string;
   company_name: string;
   expiry_date: string;
@@ -9,13 +10,26 @@ export interface IVat {
 
 export const parseVatCertificate = (
   data: Array<string>,
-  rawResult: any
+  pages: any
 ): IVat | any => {
   let returnObject = {
+    is_valid: false,
     company_name: "",
     expiry_date: "",
     tax_registration_number: "",
   };
+
+  //# CHECK IF DOCUMENT IS VALID
+  (function () {
+    data.forEach((line) => {
+      const regexResult = line.match(/federal\s+tax\s+authority/i);
+      if (regexResult && regexResult[0]) {
+        returnObject.is_valid = true;
+      }
+    });
+  })();
+
+  if (!returnObject.is_valid) return { is_valid: false };
 
   // #1 get tax registration number (usually its in first 20 entries)
   for (let i = 0; i < data.length; i++) {
@@ -40,7 +54,7 @@ export const parseVatCertificate = (
   // in that block find words that intersects it, and thats our final result (full name of company, sometimes partial)
 
   //find average Y of word: "english" bounding box
-  const blocks = rawResult.pages[0].blocks;
+  const blocks = pages[0].blocks;
   let topOfBox: number = 0;
   let bottomOfBox: number = 0;
 

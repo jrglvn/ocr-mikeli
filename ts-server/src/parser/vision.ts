@@ -31,6 +31,7 @@ export async function parseDocument(
   }
 
   const result = await batchAnnotateFiles();
+  const pages = result[0].fullTextAnnotation.pages;
   const textToArray = result[0].fullTextAnnotation.text.split(/\r?\n/);
-  return [dispatch(kind, textToArray, result[0].fullTextAnnotation), result];
+  return [dispatch(kind, textToArray, pages), result];
 }

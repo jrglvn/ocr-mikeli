@@ -1,54 +1,179 @@
 import {
   extractAndFormatDate,
   extractVatNumber,
-  findWordObject,
+  findWordsContainingText,
+  extractTextFromWord,
+  findParagrapshContainingText,
   getBoundingBox,
+  findWordsInBounds,
 } from "./_shared";
 
 export interface IKyc {
+  is_valid: boolean;
   tax_registration_number: string;
   company_name: string;
+  location: string;
+  business_activity: string;
+  legal_form: string;
   license_number: string;
   expiry_date: string;
   sign_date: string;
   contact_details: string;
   email: string;
   respresentative_name: string;
+  designation: string;
 }
 
-export const parseKyc = (data: Array<string>, rawResult: any): IKyc | any => {
+export const parseKyc = (data: Array<string>, pages: any): IKyc | any => {
   let returnObject = {
+    is_valid: false,
     tax_registration_number: "",
     license_number: "",
     company_name: "",
+    location: "",
+    business_activity: "",
+    legal_form: "",
     expiry_date: "",
     sign_date: "",
     contact_details: "",
     respresentative_name: "",
+    designation: "",
   } as IKyc;
 
-  //#1 full legal name
-  const nameRegex = /full legal name/i;
-  for (let i = 0; i < data.length; i++) {
-    const temp = data[i].match(nameRegex);
-    if (temp) {
-      returnObject.company_name = data[i + 1];
-      break;
-    }
-  }
+  //# CHECK IF DOCUMENT IS VALID
+  (function () {
+    data.forEach((line) => {
+      const regexResult = line.match(/kyc/i);
+      if (regexResult && regexResult[0]) {
+        returnObject.is_valid = true;
+      }
+    });
+  })();
 
-  //#2 dates, find word object containing dates, if word bounding box is in top of page => date is expiry date,
+  if (!returnObject.is_valid) return { is_valid: false };
+
+  // FULL LEGAL NAME
+  // * find word with regex "full" from that word look at right and with found words generate full company name
+  (function () {
+    const [firstWord] = findWordsContainingText(pages, /full/i);
+    if (firstWord) {
+      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
+      const foundWords = findWordsInBounds(firstWord.page, {
+        x1: 0.3,
+        x2: 0.8,
+        y1: boundingBox.top,
+        y2: boundingBox.bottom + 0.01,
+      });
+      if (foundWords) {
+        const stringArray = foundWords.map((word) => extractTextFromWord(word));
+        returnObject.company_name = stringArray.join(" ");
+      }
+    }
+  })();
+
+  // LOCATION
+  // * find word with regex "full" from that word look at right and with found words generate full company name
+  (function () {
+    const [firstWord] = findWordsContainingText(pages, /location/i);
+    if (firstWord) {
+      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
+      const foundWords = findWordsInBounds(firstWord.page, {
+        x1: 0.3,
+        x2: 0.6,
+        y1: boundingBox.top,
+        y2: boundingBox.bottom + 0.01,
+      });
+      if (foundWords) {
+        const stringArray = foundWords.map((word) => extractTextFromWord(word));
+        returnObject.location = stringArray.join(" ");
+      }
+    }
+  })();
+
+  // BUSINESS ACTIVITY
+  (function () {
+    const [firstWord] = findWordsContainingText(pages, /activity/i);
+    if (firstWord) {
+      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
+      const foundWords = findWordsInBounds(firstWord.page, {
+        x1: 0.3,
+        x2: 0.6,
+        y1: boundingBox.top,
+        y2: boundingBox.bottom + 0.01,
+      });
+      if (foundWords) {
+        const stringArray = foundWords.map((word) => extractTextFromWord(word));
+        returnObject.business_activity = stringArray.join(" ");
+      }
+    }
+  })();
+
+  // LEGAL FORM OF FIRM
+  (function () {
+    const [firstWord] = findWordsContainingText(pages, /specify\)/i);
+    if (firstWord) {
+      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
+      const foundWords = findWordsInBounds(firstWord.page, {
+        x1: 0.3,
+        x2: 0.7,
+        y1: boundingBox.top,
+        y2: boundingBox.bottom + 0.01,
+      });
+      if (foundWords) {
+        const stringArray = foundWords.map((word) => extractTextFromWord(word));
+        returnObject.legal_form = stringArray.join(" ");
+      }
+    }
+  })();
+
+  // REPRESENTATIVE NAME
+  (function () {
+    const [firstWord] = findWordsContainingText(pages, /Representative/);
+    if (firstWord) {
+      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
+      const foundWords = findWordsInBounds(firstWord.page, {
+        x1: 0.3,
+        x2: 0.5,
+        y1: boundingBox.top,
+        y2: boundingBox.bottom + 0.01,
+      });
+      if (foundWords) {
+        const stringArray = foundWords.map((word) => extractTextFromWord(word));
+        returnObject.respresentative_name = stringArray.join(" ");
+      }
+    }
+  })();
+
+  // DESIGNATION
+  (function () {
+    const [firstWord] = findWordsContainingText(pages, /designation/i);
+    if (firstWord) {
+      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
+      const foundWords = findWordsInBounds(firstWord.page, {
+        x1: 0.66,
+        x2: 0.9,
+        y1: boundingBox.top,
+        y2: boundingBox.bottom + 0.01,
+      });
+      if (foundWords) {
+        const stringArray = foundWords.map((word) => extractTextFromWord(word));
+        returnObject.designation = stringArray.join(" ");
+      }
+    }
+  })();
+
+  //# DATES, find word object containing dates, if word bounding box is in top of page => date is expiry date,
   //otherwise it's assign date
-  const dates: Array<any> = findWordObject(
-    rawResult,
+  const dates: Array<any> = findParagrapshContainingText(
+    pages,
     /\d{1,2}[\-\s]+[A-Z]\w{2}[\-\s]+\d{4}/
   );
 
   dates.forEach((date) => {
-    const boundingBox = getBoundingBox(rawResult, date.element);
-    boundingBox.avgYnormalized < 0.5
-      ? (returnObject.expiry_date = date.text.replace(/\s/g, ""))
-      : (returnObject.sign_date = date.text.replace(/\s/g, ""));
+    const boundingBox = getBoundingBox(date.paragraph, date.page);
+    boundingBox.avgY < 0.5
+      ? (returnObject.expiry_date = date.result.replace(/\s/g, ""))
+      : (returnObject.sign_date = date.result.replace(/\s/g, ""));
   });
 
   //#3 license number
@@ -96,21 +221,6 @@ export const parseKyc = (data: Array<string>, rawResult: any): IKyc | any => {
       break;
     }
   }
-
-  //#6 representative name
-  for (let i = 0; i < data.length; i++) {
-    const temp = data[i].match(/Representative/);
-    if (temp) {
-      const name = data[i + 1].match(/(?:Name\s?)?(.*)/i);
-      if (name && name[1])
-        returnObject.respresentative_name = name[1]
-          .replace(/\sdesignation/i, "")
-          .trim();
-      break;
-    }
-  }
-
-  //#
 
   return returnObject;
 };

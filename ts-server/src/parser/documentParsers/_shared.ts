@@ -27,35 +27,9 @@ export const extractVatNumber = (data: string): string => {
   return result;
 };
 
-export const findWordObject = (
-  rawResult: any,
-  regex: RegExp
-): Array<{ element: any; text: string }> => {
-  const blocks = rawResult.pages[0].blocks;
-
-  const results: Array<{ element: any; text: string }> = [];
-
-  blocks.forEach((block) => {
-    block.paragraphs.forEach((paragraph) => {
-      let paragraphText = "";
-      paragraph.words.forEach((word) => {
-        const word_symbols = word.symbols.map((symbol) => symbol.text);
-        const word_text = word_symbols.join("");
-        paragraphText = paragraphText + word_text + " ";
-      });
-      console.log(paragraphText);
-      const temp = paragraphText.match(regex);
-      if (temp && temp[0]) {
-        results.push({ element: paragraph, text: temp[0] });
-      }
-    });
-  });
-  return results;
-};
-
 export const getBoundingBox = (
-  rawResult: any,
-  element: any
+  element: any,
+  page: any
 ): {
   top;
   right;
@@ -65,12 +39,7 @@ export const getBoundingBox = (
   avgY;
   width;
   height;
-  pageWidth;
-  pageHeight;
-  avgXnormalized;
-  avgYnormalized: number;
 } => {
-  const page = rawResult.pages[0];
   let result = {
     top: 0,
     right: 0,
@@ -80,40 +49,104 @@ export const getBoundingBox = (
     avgY: 0,
     width: 0,
     height: 0,
-    pageWidth: 0,
-    pageHeight: 0,
-    avgXnormalized: 0,
-    avgYnormalized: 0,
   };
 
   const vertices: Array<any> = element.boundingBox.normalizedVertices.length
     ? element.boundingBox.normalizedVertices
     : element.boundingBox.vertices;
 
-  const pageSize = element.boundingBox.normalizedVertices.length
-    ? { width: page.width, height: page.height }
-    : { width: 1, height: 1 };
+  const factor = element.boundingBox.normalizedVertices.length
+    ? { width: 1, height: 1 }
+    : { width: page.width, height: page.height };
 
-  result.top = Math.floor(
-    Math.min(vertices[0].y, vertices[1].y) * pageSize.height
-  );
-  result.right = Math.floor(
-    Math.max(vertices[1].x, vertices[2].x) * pageSize.width
-  );
-  result.bottom = Math.floor(
-    Math.max(vertices[2].y, vertices[3].y) * pageSize.height
-  );
-  result.left = Math.floor(
-    Math.min(vertices[3].x, vertices[0].x) * pageSize.width
-  );
-  result.width = result.right - result.left;
-  result.height = result.bottom - result.top;
+  result.top = Math.min(vertices[0].y, vertices[1].y) / factor.height;
+  result.right = Math.max(vertices[1].x, vertices[2].x) / factor.width;
+  result.bottom = Math.max(vertices[2].y, vertices[3].y) / factor.height;
+  result.left = Math.min(vertices[3].x, vertices[0].x) / factor.width;
   result.avgX = (result.left + result.right) / 2;
   result.avgY = (result.top + result.bottom) / 2;
-  result.pageWidth = page.width;
-  result.pageHeight = page.height;
-  result.avgXnormalized = result.avgX / result.pageWidth;
-  result.avgYnormalized = result.avgY / result.pageHeight;
+
+  result.width = result.right - result.left;
+  result.height = result.bottom - result.top;
 
   return result;
+};
+
+export const findParagrapshContainingText = (
+  pages: any,
+  regex: RegExp
+): Array<{ result: string; paragraph: any; page: any }> => {
+  const paragraphObjects: Array<{
+    result: string;
+    paragraph: any;
+    page: any;
+  }> = [];
+
+  pages.forEach((page) => {
+    page.blocks.forEach((block) => {
+      block.paragraphs.forEach((paragraph) => {
+        let paragraph_text = "";
+        paragraph.words.forEach((word) => {
+          paragraph_text = paragraph_text + " " + extractTextFromWord(word);
+        });
+        const regexResult = paragraph_text.match(regex);
+        if (regexResult && regexResult[0]) {
+          paragraphObjects.push({ result: regexResult[0], paragraph, page });
+        }
+      });
+    });
+  });
+
+  return paragraphObjects;
+};
+
+export const findWordsContainingText = (
+  pages: any,
+  regex: RegExp
+): Array<{ result: string; word: any; page: any }> => {
+  const wordObjects: Array<any> = [];
+
+  pages.forEach((page) => {
+    page.blocks.forEach((block) => {
+      block.paragraphs.forEach((paragraph) => {
+        paragraph.words.forEach((word) => {
+          const word_text = extractTextFromWord(word);
+          const regexResult = word_text.match(regex);
+          if (regexResult && regexResult[0]) {
+            wordObjects.push({ result: regexResult[0], word, page });
+          }
+        });
+      });
+    });
+  });
+
+  return wordObjects;
+};
+
+export const extractTextFromWord = (word) => {
+  const word_symbols = word.symbols.map((symbol) => symbol.text);
+  return word_symbols.join("");
+};
+
+export const findWordsInBounds = (
+  page,
+  { x1, x2, y1, y2 }: { x1; x2; y1; y2: number }
+): Array<any> => {
+  const wordsInBound: Array<any> = [];
+  page.blocks.forEach((block) => {
+    block.paragraphs.forEach((paragraph) => {
+      paragraph.words.forEach((word) => {
+        const wordBox = getBoundingBox(word, page);
+        if (
+          wordBox.avgX > x1 &&
+          wordBox.avgX < x2 &&
+          wordBox.avgY > y1 &&
+          wordBox.avgY < y2
+        ) {
+          wordsInBound.push(word);
+        }
+      });
+    });
+  });
+  return wordsInBound;
 };

@@ -1,13 +1,17 @@
 import { extractAndFormatDate } from "./_shared";
 
 export interface IEstablishment {
+  is_valid: boolean;
   company_name: string;
   expiry_date: string;
   establishment_id: string;
 }
 
-export const parseEstablishmentId = (data: Array<string>): IEstablishment => {
+export const parseEstablishmentId = (
+  data: Array<string>
+): IEstablishment | any => {
   let returnObject = {
+    is_valid: true,
     company_name: "",
     expiry_date: "",
     establishment_id: "",
@@ -42,6 +46,7 @@ export const parseEstablishmentId = (data: Array<string>): IEstablishment => {
       break;
     }
   }
+  if (!returnObject.establishment_id) return { is_valid: false };
 
   return returnObject;
 };
