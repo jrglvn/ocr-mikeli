@@ -28,7 +28,7 @@ app.get("/", (req, res) => res.send("Hello World!"));
 
 app.post("/upload", async (req, res) => {
   const file = req.files[Object.keys(req.files)[0]];
-  const result = await parseDocument(file, "VAT_CERTIFICATE");
+  const result = await parseDocument(file, "KYC");
   res.status(200);
   res.send(result);
 });

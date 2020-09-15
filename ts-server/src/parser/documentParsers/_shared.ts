@@ -129,19 +129,23 @@ export const extractTextFromWord = (word) => {
 };
 
 export const findWordsInBounds = (
-  page,
-  { x1, x2, y1, y2 }: { x1; x2; y1; y2: number }
+  source: any,
+  page: any,
+  { x1, x2, offsetY1, offsetY2 }: { x1; x2; offsetY1; offsetY2: number }
 ): Array<any> => {
+  const sourceWordBox = getBoundingBox(source, page);
   const wordsInBound: Array<any> = [];
   page.blocks.forEach((block) => {
     block.paragraphs.forEach((paragraph) => {
       paragraph.words.forEach((word) => {
         const wordBox = getBoundingBox(word, page);
+        const xDifference = wordBox.avgX - sourceWordBox.avgX;
+        const yOffset = xDifference * page.kFactor;
         if (
           wordBox.avgX > x1 &&
           wordBox.avgX < x2 &&
-          wordBox.avgY > y1 &&
-          wordBox.avgY < y2
+          wordBox.top > sourceWordBox.avgY + yOffset &&
+          wordBox.avgY < sourceWordBox.avgY + yOffset
         ) {
           wordsInBound.push(word);
         }
@@ -149,4 +153,32 @@ export const findWordsInBounds = (
     });
   });
   return wordsInBound;
+};
+
+export const getOffsetWords = (
+  pages: any,
+  regex: RegExp,
+  indexOfElement: number,
+  {
+    x1,
+    x2,
+    offsetY1 = 0,
+    offsetY2 = 0,
+  }: { x1: number; x2: number; offsetY1?: number; offsetY2?: number }
+) => {
+  const foundWords = findWordsContainingText(pages, regex);
+  const wordAtIndex = foundWords[indexOfElement];
+  if (wordAtIndex) {
+    const foundWords = findWordsInBounds(wordAtIndex.word, wordAtIndex.page, {
+      x1,
+      x2,
+      offsetY1,
+      offsetY2,
+    });
+    if (foundWords) {
+      const stringArray = foundWords.map((word) => extractTextFromWord(word));
+      return stringArray.join(" ");
+    }
+  }
+  return "";
 };

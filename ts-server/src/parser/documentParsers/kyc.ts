@@ -6,6 +6,7 @@ import {
   findParagrapshContainingText,
   getBoundingBox,
   findWordsInBounds,
+  getOffsetWords,
 } from "./_shared";
 
 export interface IKyc {
@@ -54,113 +55,58 @@ export const parseKyc = (data: Array<string>, pages: any): IKyc | any => {
 
   // FULL LEGAL NAME
   // * find word with regex "full" from that word look at right and with found words generate full company name
-  (function () {
-    const [firstWord] = findWordsContainingText(pages, /full/i);
-    if (firstWord) {
-      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
-      const foundWords = findWordsInBounds(firstWord.page, {
-        x1: 0.3,
-        x2: 0.8,
-        y1: boundingBox.top,
-        y2: boundingBox.bottom + 0.01,
-      });
-      if (foundWords) {
-        const stringArray = foundWords.map((word) => extractTextFromWord(word));
-        returnObject.company_name = stringArray.join(" ");
-      }
-    }
-  })();
+  returnObject.company_name = getOffsetWords(pages, /full/i, 0, {
+    x1: 0.3,
+    x2: 0.8,
+    offsetY1: 0.005,
+    offsetY2: 0.005,
+  });
 
   // LOCATION
   // * find word with regex "full" from that word look at right and with found words generate full company name
-  (function () {
-    const [firstWord] = findWordsContainingText(pages, /location/i);
-    if (firstWord) {
-      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
-      const foundWords = findWordsInBounds(firstWord.page, {
-        x1: 0.3,
-        x2: 0.6,
-        y1: boundingBox.top,
-        y2: boundingBox.bottom + 0.01,
-      });
-      if (foundWords) {
-        const stringArray = foundWords.map((word) => extractTextFromWord(word));
-        returnObject.location = stringArray.join(" ");
-      }
-    }
-  })();
+  returnObject.location = getOffsetWords(pages, /location/i, 0, {
+    x1: 0.3,
+    x2: 0.6,
+    offsetY1: 0.005,
+    offsetY2: 0.005,
+  });
 
   // BUSINESS ACTIVITY
-  (function () {
-    const [firstWord] = findWordsContainingText(pages, /activity/i);
-    if (firstWord) {
-      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
-      const foundWords = findWordsInBounds(firstWord.page, {
-        x1: 0.3,
-        x2: 0.6,
-        y1: boundingBox.top,
-        y2: boundingBox.bottom + 0.01,
-      });
-      if (foundWords) {
-        const stringArray = foundWords.map((word) => extractTextFromWord(word));
-        returnObject.business_activity = stringArray.join(" ");
-      }
-    }
-  })();
+  returnObject.business_activity = getOffsetWords(pages, /activity/i, 0, {
+    x1: 0.3,
+    x2: 0.6,
+    offsetY1: 0.005,
+    offsetY2: 0.005,
+  });
 
   // LEGAL FORM OF FIRM
-  (function () {
-    const [firstWord] = findWordsContainingText(pages, /specify\)/i);
-    if (firstWord) {
-      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
-      const foundWords = findWordsInBounds(firstWord.page, {
-        x1: 0.3,
-        x2: 0.7,
-        y1: boundingBox.top,
-        y2: boundingBox.bottom + 0.01,
-      });
-      if (foundWords) {
-        const stringArray = foundWords.map((word) => extractTextFromWord(word));
-        returnObject.legal_form = stringArray.join(" ");
-      }
-    }
-  })();
+  returnObject.legal_form = getOffsetWords(pages, /specify\)*/i, 0, {
+    x1: 0.3,
+    x2: 0.7,
+    offsetY1: 0.005,
+    offsetY2: 0.005,
+  });
 
   // REPRESENTATIVE NAME
-  (function () {
-    const [firstWord] = findWordsContainingText(pages, /Representative/);
-    if (firstWord) {
-      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
-      const foundWords = findWordsInBounds(firstWord.page, {
-        x1: 0.3,
-        x2: 0.5,
-        y1: boundingBox.top,
-        y2: boundingBox.bottom + 0.01,
-      });
-      if (foundWords) {
-        const stringArray = foundWords.map((word) => extractTextFromWord(word));
-        returnObject.respresentative_name = stringArray.join(" ");
-      }
+  returnObject.respresentative_name = getOffsetWords(
+    pages,
+    /Representative/i,
+    0,
+    {
+      x1: 0.3,
+      x2: 0.5,
+      offsetY1: 0.005,
+      offsetY2: 0.005,
     }
-  })();
+  );
 
   // DESIGNATION
-  (function () {
-    const [firstWord] = findWordsContainingText(pages, /designation/i);
-    if (firstWord) {
-      const boundingBox = getBoundingBox(firstWord.word, firstWord.page);
-      const foundWords = findWordsInBounds(firstWord.page, {
-        x1: 0.66,
-        x2: 0.9,
-        y1: boundingBox.top,
-        y2: boundingBox.bottom + 0.01,
-      });
-      if (foundWords) {
-        const stringArray = foundWords.map((word) => extractTextFromWord(word));
-        returnObject.designation = stringArray.join(" ");
-      }
-    }
-  })();
+  returnObject.designation = getOffsetWords(pages, /designation/i, 0, {
+    x1: 0.66,
+    x2: 0.9,
+    offsetY1: 0.005,
+    offsetY2: 0.005,
+  });
 
   //# DATES, find word object containing dates, if word bounding box is in top of page => date is expiry date,
   //otherwise it's assign date

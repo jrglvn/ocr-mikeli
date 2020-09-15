@@ -30,8 +30,22 @@ export async function parseDocument(
     return result.responses[0].responses;
   }
 
-  const result = await batchAnnotateFiles();
-  const pages = result[0].fullTextAnnotation.pages;
+  let result = await batchAnnotateFiles();
+  let pages = result[0].fullTextAnnotation.pages;
+  pages.forEach((page) => {
+    const kArray: Array<number> = [];
+    page.blocks.forEach((block) => {
+      const vertices = block.boundingBox.normalizedVertices.length
+        ? block.boundingBox.normalizedVertices
+        : block.boundingBox.vertices;
+      kArray.push(
+        (vertices[1].y - vertices[0].y) / (vertices[1].x - vertices[0].x)
+      );
+    });
+    let sum = kArray.reduce((acc, current) => (acc += current)) / kArray.length;
+    page.kFactor = sum;
+  });
+
   const textToArray = result[0].fullTextAnnotation.text.split(/\r?\n/);
   return [dispatch(kind, textToArray, pages), result];
 }
