@@ -118,10 +118,10 @@ const DataToPage = ({ page }) => {
           key={index}
           style={{
             position: "absolute",
-            top: p.top + "px",
-            left: p.left + "px",
-            width: p.width + "px",
-            height: p.height + "px",
+            top: Math.floor(p.top * page.height) + "px",
+            left: Math.floor(p.left * page.width) + "px",
+            width: Math.floor(p.width * page.width) + "px",
+            height: Math.floor(p.height * page.height) + "px",
             border: "1px solid black",
             borderColor: generateColor(p.confidence),
           }}
