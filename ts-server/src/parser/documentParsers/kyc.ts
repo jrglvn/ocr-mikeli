@@ -58,8 +58,6 @@ export const parseKyc = (data: Array<string>, pages: any): IKyc | any => {
   returnObject.company_name = getOffsetWords(pages, /full/i, 0, {
     x1: 0.3,
     x2: 0.8,
-    offsetY1: 0.005,
-    offsetY2: 0.005,
   });
 
   // LOCATION
@@ -67,36 +65,28 @@ export const parseKyc = (data: Array<string>, pages: any): IKyc | any => {
   returnObject.location = getOffsetWords(pages, /location/i, 0, {
     x1: 0.3,
     x2: 0.6,
-    offsetY1: 0.005,
-    offsetY2: 0.005,
   });
 
   // BUSINESS ACTIVITY
   returnObject.business_activity = getOffsetWords(pages, /activity/i, 0, {
     x1: 0.3,
     x2: 0.6,
-    offsetY1: 0.005,
-    offsetY2: 0.005,
   });
 
   // LEGAL FORM OF FIRM
-  returnObject.legal_form = getOffsetWords(pages, /specify\)*/i, 0, {
+  returnObject.legal_form = getOffsetWords(pages, /Specify\)/i, 0, {
     x1: 0.3,
     x2: 0.7,
-    offsetY1: 0.005,
-    offsetY2: 0.005,
   });
 
   // REPRESENTATIVE NAME
   returnObject.respresentative_name = getOffsetWords(
     pages,
-    /Representative/i,
+    /Representative/,
     0,
     {
       x1: 0.3,
       x2: 0.5,
-      offsetY1: 0.005,
-      offsetY2: 0.005,
     }
   );
 
@@ -104,8 +94,6 @@ export const parseKyc = (data: Array<string>, pages: any): IKyc | any => {
   returnObject.designation = getOffsetWords(pages, /designation/i, 0, {
     x1: 0.66,
     x2: 0.9,
-    offsetY1: 0.005,
-    offsetY2: 0.005,
   });
 
   //# DATES, find word object containing dates, if word bounding box is in top of page => date is expiry date,

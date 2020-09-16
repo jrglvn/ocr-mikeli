@@ -137,15 +137,21 @@ export const findWordsInBounds = (
   const wordsInBound: Array<any> = [];
   page.blocks.forEach((block) => {
     block.paragraphs.forEach((paragraph) => {
+      const vertices = paragraph.boundingBox.normalizedVertices.length
+        ? paragraph.boundingBox.normalizedVertices
+        : paragraph.boundingBox.vertices;
+
+      const kFactor =
+        (vertices[1].y - vertices[0].y) / (vertices[1].x - vertices[0].x);
+
       paragraph.words.forEach((word) => {
         const wordBox = getBoundingBox(word, page);
-        const xDifference = wordBox.avgX - sourceWordBox.avgX;
-        const yOffset = xDifference * page.kFactor;
+        const yOffset = (wordBox.avgX - sourceWordBox.avgX) * kFactor;
         if (
           wordBox.avgX > x1 &&
           wordBox.avgX < x2 &&
-          wordBox.top > sourceWordBox.avgY + yOffset &&
-          wordBox.avgY < sourceWordBox.avgY + yOffset
+          wordBox.top < sourceWordBox.avgY + yOffset - offsetY1 &&
+          wordBox.avgY > sourceWordBox.avgY + yOffset + offsetY2
         ) {
           wordsInBound.push(word);
         }
