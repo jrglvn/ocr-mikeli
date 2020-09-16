@@ -96,6 +96,12 @@ export const parseKyc = (data: Array<string>, pages: any): IKyc | any => {
     x2: 0.9,
   });
 
+  //PHONE NUMBER  = CONTACT_DETAILS
+  returnObject.contact_details = getOffsetWords(pages, /details/i, 1, {
+    x1: 0.3,
+    x2: 0.6,
+  });
+
   //# DATES, find word object containing dates, if word bounding box is in top of page => date is expiry date,
   //otherwise it's assign date
   const dates: Array<any> = findParagrapshContainingText(
@@ -126,22 +132,6 @@ export const parseKyc = (data: Array<string>, pages: any): IKyc | any => {
     const temp = data[i].match(trnRegex);
     if (temp) {
       returnObject.tax_registration_number = temp[0];
-      break;
-    }
-  }
-
-  //#4 phone number aka contact_details
-
-  const contactRegex = /contact details([\s\d]*)/i;
-  for (let i = 0; i < data.length; i++) {
-    const temp = data[i].match(contactRegex);
-    if (temp) {
-      if (temp[1] !== "") {
-        returnObject.contact_details = temp[1].trim();
-      } else {
-        returnObject.contact_details = data[i + 1];
-      }
-
       break;
     }
   }
