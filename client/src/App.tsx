@@ -49,14 +49,14 @@ function App() {
         <DataToPage key={index} page={page} />
       ))}
 
-      <div>
+      {/* <div>
         {responseArray &&
           responseArray.length &&
           responseArray[1][0].fullTextAnnotation.text
             .toString()
             .split(/\r?\n/)
             .map((line, index) => <div key={index}>{line}</div>)}
-      </div>
+      </div> */}
     </StyledApp>
   );
 }
@@ -103,49 +103,58 @@ const DataToPage = ({ page }) => {
   }, []);
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: page.width + "px",
-        height: page.height + "px",
-        fontSize: "10px",
-        background: "#ddd",
-        border: "medium ridge black",
-      }}
-    >
-      {paragraphs.map((p, index) => (
-        <fieldset
-          key={index}
-          style={{
-            position: "absolute",
-            top: Math.floor(p.top * page.height) + "px",
-            left: Math.floor(p.left * page.width) + "px",
-            width: Math.floor(p.width * page.width) + "px",
-            height: Math.floor(p.height * page.height) + "px",
-            border: "1px solid black",
-            borderColor: generateColor(p.confidence),
-          }}
-        >
-          <legend style={{ transform: "translateY(-5px)", fontWeight: "bold" }}>
-            {p.index}
-          </legend>
-        </fieldset>
-      ))}
-      {words.map((word, index) => (
-        <div
-          key={index}
-          style={{
-            position: "absolute",
-            top: Math.floor(word.top * page.height) + "px",
-            left: Math.floor(word.left * page.width) + "px",
-            width: Math.floor(word.width * page.width) + "px",
-            height: Math.floor(word.height * page.height) + "px",
-          }}
-        >
-          {word.text}
-        </div>
-      ))}
-    </div>
+    <>
+      <div
+        style={{
+          position: "relative",
+          width: page.width + "px",
+          height: page.height + "px",
+          fontSize: "10px",
+          background: "#ddd",
+          border: "medium ridge black",
+        }}
+      >
+        {paragraphs.map((p, index) => (
+          <fieldset
+            key={index}
+            style={{
+              position: "absolute",
+              top: Math.floor(p.top * page.height) + "px",
+              left: Math.floor(p.left * page.width) + "px",
+              width: Math.floor(p.width * page.width) + "px",
+              height: Math.floor(p.height * page.height) + "px",
+              border: "1px solid black",
+              borderColor: generateColor(p.confidence),
+            }}
+          >
+            <legend
+              style={{ transform: "translateY(-5px)", fontWeight: "bold" }}
+            >
+              {p.index}
+            </legend>
+          </fieldset>
+        ))}
+        {words.map((word, index) => (
+          <div
+            key={index}
+            style={{
+              position: "absolute",
+              top: Math.floor(word.top * page.height) + "px",
+              left: Math.floor(word.left * page.width) + "px",
+              width: Math.floor(word.width * page.width) + "px",
+              height: Math.floor(word.height * page.height) + "px",
+            }}
+          >
+            {word.text}
+          </div>
+        ))}
+      </div>
+      <div>
+        {paragraphs.map((paragraph) => (
+          <p>{paragraph.text}</p>
+        ))}
+      </div>
+    </>
   );
 };
 
@@ -234,8 +243,12 @@ export const getBoundingBox = (
 export const findParagrapshContainingText = (
   pages: any,
   regex: RegExp
-): Array<{ paragraph: any; page: any }> => {
-  const paragraphObjects: Array<{ paragraph: any; page: any }> = [];
+): Array<{ result: string; paragraph: any; page: any }> => {
+  const paragraphObjects: Array<{
+    result: string;
+    paragraph: any;
+    page: any;
+  }> = [];
 
   pages.forEach((page) => {
     page.blocks.forEach((block) => {
@@ -246,7 +259,7 @@ export const findParagrapshContainingText = (
         });
         const regexResult = paragraph_text.match(regex);
         if (regexResult && regexResult[0]) {
-          paragraphObjects.push({ paragraph, page });
+          paragraphObjects.push({ result: regexResult[0], paragraph, page });
         }
       });
     });
@@ -258,7 +271,7 @@ export const findParagrapshContainingText = (
 export const findWordsContainingText = (
   pages: any,
   regex: RegExp
-): Array<{ word: any; page: any }> => {
+): Array<{ result: string; word: any; page: any }> => {
   const wordObjects: Array<any> = [];
 
   pages.forEach((page) => {
@@ -268,7 +281,7 @@ export const findWordsContainingText = (
           const word_text = extractTextFromWord(word);
           const regexResult = word_text.match(regex);
           if (regexResult && regexResult[0]) {
-            wordObjects.push({ word, page });
+            wordObjects.push({ result: regexResult[0], word, page });
           }
         });
       });
@@ -283,26 +296,63 @@ export const extractTextFromWord = (word) => {
   return word_symbols.join("");
 };
 
-const findWordsInBounds = (
-  page,
-  { x1, x2, y1, y2 }: { x1; x2; y1; y2: number }
+export const findWordsInBounds = (
+  source: any,
+  page: any,
+  { x1, x2, offsetY1, offsetY2 }: { x1; x2; offsetY1; offsetY2: number }
 ): Array<any> => {
+  const sourceWordBox = getBoundingBox(source, page);
   const wordsInBound: Array<any> = [];
   page.blocks.forEach((block) => {
     block.paragraphs.forEach((paragraph) => {
+      const vertices = paragraph.boundingBox.normalizedVertices.length
+        ? paragraph.boundingBox.normalizedVertices
+        : paragraph.boundingBox.vertices;
+
+      const kFactor =
+        (vertices[1].y - vertices[0].y) / (vertices[1].x - vertices[0].x);
+
       paragraph.words.forEach((word) => {
         const wordBox = getBoundingBox(word, page);
+        const yOffset = (wordBox.avgX - sourceWordBox.avgX) * kFactor;
         if (
           wordBox.avgX > x1 &&
           wordBox.avgX < x2 &&
-          wordBox.avgY > y1 &&
-          wordBox.avgY < y2
+          wordBox.top < sourceWordBox.avgY + yOffset - offsetY1 &&
+          wordBox.avgY > sourceWordBox.avgY + yOffset + offsetY2
         ) {
-          console.log("x: ", wordBox.avgX, "y: ", wordBox.avgY);
           wordsInBound.push(word);
         }
       });
     });
   });
   return wordsInBound;
+};
+
+export const getOffsetWords = (
+  pages: any,
+  regex: RegExp,
+  indexOfElement: number,
+  {
+    x1,
+    x2,
+    offsetY1 = 0,
+    offsetY2 = 0,
+  }: { x1: number; x2: number; offsetY1?: number; offsetY2?: number }
+) => {
+  const foundWords = findWordsContainingText(pages, regex);
+  const wordAtIndex = foundWords[indexOfElement];
+  if (wordAtIndex) {
+    const foundWords = findWordsInBounds(wordAtIndex.word, wordAtIndex.page, {
+      x1,
+      x2,
+      offsetY1,
+      offsetY2,
+    });
+    if (foundWords) {
+      const stringArray = foundWords.map((word) => extractTextFromWord(word));
+      return stringArray.join(" ");
+    }
+  }
+  return "";
 };
