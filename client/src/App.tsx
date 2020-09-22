@@ -1,11 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
+import { workerData } from "worker_threads";
+
+interface IZapis {
+  katBroj?: string;
+  naziv?: string;
+  jmj?: string;
+  kol?: number;
+  vpc?: number;
+  rabat?: number;
+}
 
 function App() {
   const inputFile = useRef<any>(null);
   const [responseArray, setResponseArray] = useState<any>();
   const [pages, setPages] = useState<Array<any>>();
+  const [zapisi, setZapisi] = useState<Array<IZapis>>();
 
   useEffect(() => {
     setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
@@ -13,9 +24,92 @@ function App() {
   useEffect(() => {
     if (responseArray && responseArray.length) {
       setPages(responseArray[1][0].fullTextAnnotation.pages);
-      console.log(responseArray);
+      // console.log(responseArray);
     }
   }, [responseArray]);
+
+  useEffect(() => {
+    if (pages) {
+      const katBrojWords = getWordsInBoundsWithRegex(
+        /\d{7,8}(\w?){2,3}/,
+        pages[0],
+        {
+          x1: 0,
+          x2: 0.2,
+        }
+      );
+
+      //create temp object, later add it to useState
+      let tempZapisi = katBrojWords.map((word) => {
+        return { katBroj: extractTextFromWord(word) } as IZapis;
+      });
+
+      //need to see if there is extra word that needs to be part of katBroj word
+      (() => {
+        for (let i = 0; i < katBrojWords.length; i++) {
+          //if index is not last, check in space between word and next word,
+          if (i !== katBrojWords.length - 1) {
+            const word1bb = getBoundingBox(katBrojWords[i], pages[0]);
+            const word2bb = getBoundingBox(katBrojWords[i + 1], pages[0]);
+
+            const [wordBetween] = getWordsInBoundsWithRegex(/.*/, pages[0], {
+              x1: word1bb.left,
+              x2: word1bb.right,
+              y1: word1bb.bottom,
+              y2: word2bb.top,
+            });
+            if (wordBetween) {
+              tempZapisi[i].katBroj += extractTextFromWord(wordBetween);
+            }
+
+            const nazivWords = getWordsInBoundsWithRegex(/.*/, pages[0], {
+              x1: 0.15,
+              x2: 0.375,
+              y1: word1bb.top,
+              y2: word2bb.top,
+            });
+            if (nazivWords.length) {
+              tempZapisi[i].naziv = nazivWords
+                .map((word) => extractTextFromWord(word))
+                .join(" ");
+              console.log(tempZapisi[i]);
+            }
+          } else {
+            // if index is last check in space below
+            const word1bb = getBoundingBox(katBrojWords[i], pages[0]);
+            const [wordBetween] = getWordsInBoundsWithRegex(/.*/, pages[0], {
+              x1: word1bb.left,
+              x2: word1bb.right,
+              y1: word1bb.bottom,
+              y2: word1bb.bottom + word1bb.height,
+            });
+            if (wordBetween) {
+              tempZapisi[i].katBroj += extractTextFromWord(wordBetween);
+            }
+
+            const nazivWords = getWordsInBoundsWithRegex(/.*/, pages[0], {
+              x1: 0.15,
+              x2: 0.375,
+              y1: word1bb.top,
+              y2: word1bb.bottom + word1bb.height,
+            });
+            if (nazivWords.length) {
+              tempZapisi[i].naziv = nazivWords
+                .map((word) => extractTextFromWord(word))
+                .join(" ");
+              console.log(tempZapisi[i]);
+            }
+          }
+        }
+      })();
+
+      //iterate again through katBrojWords and look at right to get jmj, kol, VPC,
+    }
+  }, [pages]);
+
+  useEffect(() => {
+    // zapisi && console.log(zapisi);
+  }, [zapisi]);
 
   return (
     <StyledApp>
@@ -41,8 +135,11 @@ function App() {
       />
       <button onClick={() => inputFile.current.click()}>select file</button>
 
-      <pre style={{ background: "#eee", padding: "10px" }}>
+      {/* <pre style={{ background: "#eee", padding: "10px" }}>
         {responseArray && JSON.stringify(responseArray[0], null, 2)}
+      </pre> */}
+      <pre style={{ background: "#eee", padding: "10px" }}>
+        {zapisi && JSON.stringify(zapisi, null, 2)}
       </pre>
 
       {pages?.map((page, index) => (
@@ -139,6 +236,7 @@ const DataToPage = ({ page }) => {
             key={index}
             style={{
               position: "absolute",
+              fontSize: Math.floor(word.height * page.height * 0.75),
               top: Math.floor(word.top * page.height) + "px",
               left: Math.floor(word.left * page.width) + "px",
               width: Math.floor(word.width * page.width) + "px",
@@ -355,4 +453,36 @@ export const getOffsetWords = (
     }
   }
   return "";
+};
+
+export const getWordsInBoundsWithRegex = (
+  regex: RegExp,
+  page: any,
+  bounds: { x1?: number; x2?: number; y1?: number; y2?: number }
+) => {
+  bounds.x1 = bounds.x1 || 0;
+  bounds.x2 = bounds.x2 || 1;
+  bounds.y1 = bounds.y1 || 0;
+  bounds.y2 = bounds.y2 || 1;
+
+  const wordsInBounds: Array<any> = [];
+  page.blocks.forEach((block) => {
+    block.paragraphs.forEach((paragraph) => {
+      paragraph.words.forEach((word) => {
+        const word_text = extractTextFromWord(word);
+        if (word_text.match(regex)) {
+          const wordBox = getBoundingBox(word, page);
+          if (
+            wordBox.avgX > bounds.x1! &&
+            wordBox.avgX < bounds.x2! &&
+            wordBox.avgY > bounds.y1! &&
+            wordBox.avgY < bounds.y2!
+          ) {
+            wordsInBounds.push(word);
+          }
+        }
+      });
+    });
+  });
+  return wordsInBounds;
 };
