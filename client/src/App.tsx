@@ -194,10 +194,15 @@ function App() {
       <pre style={{ background: "#eee", padding: "10px" }}>
         {zapisi &&
           JSON.stringify(
-            zapisi.reduce(
-              (acc, current) =>
-                (current.vpc * current.kol * (100 - current.rabat)) / 100
-            ),
+            {
+              ukupno: zapisi.reduce(
+                (accumulator: number, current: IZapis) =>
+                  accumulator +
+                  (current?.vpc! * current?.kol! * (100 - current?.rabat!)) /
+                    100,
+                0
+              ),
+            },
             null,
             2
           )}
