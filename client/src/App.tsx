@@ -192,6 +192,18 @@ function App() {
         {responseArray && JSON.stringify(responseArray[0], null, 2)}
       </pre> */}
       <pre style={{ background: "#eee", padding: "10px" }}>
+        {zapisi &&
+          JSON.stringify(
+            zapisi.reduce(
+              (acc, current) =>
+                (current.vpc * current.kol * (100 - current.rabat)) / 100
+            ),
+            null,
+            2
+          )}
+      </pre>
+
+      <pre style={{ background: "#eee", padding: "10px" }}>
         {zapisi && JSON.stringify(zapisi, null, 2)}
       </pre>
 
