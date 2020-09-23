@@ -97,14 +97,67 @@ function App() {
               tempZapisi[i].naziv = nazivWords
                 .map((word) => extractTextFromWord(word))
                 .join(" ");
-              console.log(tempZapisi[i]);
             }
           }
         }
       })();
 
       //iterate again through katBrojWords and look at right to get jmj, kol, VPC,
+      (() => {
+        for (let i = 0; i < katBrojWords.length; i++) {
+          const wordbb = getBoundingBox(katBrojWords[i], pages[0]);
+
+          const [jmj] = getWordsInBoundsWithRegex(/.*/, pages[0], {
+            x1: 0.375,
+            x2: 0.425,
+            y1: wordbb.top,
+            y2: wordbb.bottom,
+          });
+          if (jmj) {
+            tempZapisi[i].jmj = extractTextFromWord(jmj);
+          }
+
+          const [kolicina] = getWordsInBoundsWithRegex(/.*/, pages[0], {
+            x1: 0.425,
+            x2: 0.5,
+            y1: wordbb.top,
+            y2: wordbb.bottom,
+          });
+          if (kolicina) {
+            tempZapisi[i].kol = parseFloat(extractTextFromWord(kolicina));
+          }
+
+          const [cijena] = getWordsInBoundsWithRegex(/.*/, pages[0], {
+            x1: 0.5,
+            x2: 0.6,
+            y1: wordbb.top,
+            y2: wordbb.bottom,
+          });
+          if (cijena) {
+            tempZapisi[i].vpc = parseFloat(
+              extractTextFromWord(cijena)
+                .replace(",", "-")
+                .replace(".", ",")
+                .replace("-", ".")
+            );
+          }
+
+          const [rabat] = getWordsInBoundsWithRegex(/.*/, pages[0], {
+            x1: 0.65,
+            x2: 0.75,
+            y1: wordbb.top,
+            y2: wordbb.bottom,
+          });
+          if (rabat) {
+            tempZapisi[i].rabat = parseFloat(
+              extractTextFromWord(rabat).replace(",", ".")
+            );
+          }
+        }
+      })();
+      setZapisi(tempZapisi);
     }
+    console.log(zapisi);
   }, [pages]);
 
   useEffect(() => {
