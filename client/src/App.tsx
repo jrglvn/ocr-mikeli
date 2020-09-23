@@ -12,11 +12,18 @@ interface IZapis {
   rabat?: number;
 }
 
+interface Primka {
+  broj_racuna?: string;
+  datum_racuna?: string;
+  artikli?: Array<IZapis>;
+  ukupno?: number;
+}
+
 function App() {
   const inputFile = useRef<any>(null);
   const [responseArray, setResponseArray] = useState<any>();
   const [pages, setPages] = useState<Array<any>>();
-  const [zapisi, setZapisi] = useState<Array<IZapis>>();
+  const [primka, setPrimka] = useState<Primka>();
 
   useEffect(() => {
     setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
@@ -155,14 +162,34 @@ function App() {
           }
         }
       })();
-      setZapisi(tempZapisi);
+
+      const [firstDate] = getWordsInBoundsWithRegex(
+        /\d{1,2}\.\d{1,2}\.\d{4}/,
+        pages[0]
+      );
+
+      const [brojRacuna] = getWordsInBoundsWithRegex(
+        /\d{1,4}-\d{2}-\d{2}/,
+        pages[0]
+      );
+
+      setPrimka({
+        datum_racuna: extractTextFromWord(firstDate),
+        broj_racuna: extractTextFromWord(brojRacuna),
+        ukupno: tempZapisi?.reduce(
+          (accumulator: number, current: IZapis) =>
+            accumulator +
+            (current?.vpc! * current?.kol! * (100 - current?.rabat!)) / 100,
+          0
+        ),
+        artikli: tempZapisi,
+      });
     }
-    console.log(zapisi);
   }, [pages]);
 
   useEffect(() => {
     // zapisi && console.log(zapisi);
-  }, [zapisi]);
+  }, [primka]);
 
   return (
     <StyledApp>
@@ -192,24 +219,7 @@ function App() {
         {responseArray && JSON.stringify(responseArray[0], null, 2)}
       </pre> */}
       <pre style={{ background: "#eee", padding: "10px" }}>
-        {zapisi &&
-          JSON.stringify(
-            {
-              ukupno: zapisi.reduce(
-                (accumulator: number, current: IZapis) =>
-                  accumulator +
-                  (current?.vpc! * current?.kol! * (100 - current?.rabat!)) /
-                    100,
-                0
-              ),
-            },
-            null,
-            2
-          )}
-      </pre>
-
-      <pre style={{ background: "#eee", padding: "10px" }}>
-        {zapisi && JSON.stringify(zapisi, null, 2)}
+        {JSON.stringify(primka, null, 2)}
       </pre>
 
       {pages?.map((page, index) => (
@@ -437,7 +447,7 @@ export const findParagrapshContainingText = (
 };
 
 export const findWordsContainingText = (
-  pages: any,
+  pages: Array<any>,
   regex: RegExp
 ): Array<{ result: string; word: any; page: any }> => {
   const wordObjects: Array<any> = [];
@@ -528,7 +538,7 @@ export const getOffsetWords = (
 export const getWordsInBoundsWithRegex = (
   regex: RegExp,
   page: any,
-  bounds: { x1?: number; x2?: number; y1?: number; y2?: number }
+  bounds: { x1?: number; x2?: number; y1?: number; y2?: number } = {}
 ) => {
   bounds.x1 = bounds.x1 || 0;
   bounds.x2 = bounds.x2 || 1;
