@@ -48,7 +48,24 @@ function App() {
 
       //create temp object, later add it to useState
       let tempZapisi = katBrojWords.map((word) => {
-        return { katBroj: extractTextFromWord(word) } as IZapis;
+        const word_text = extractTextFromWord(word);
+        let formatted: string;
+        if (word_text.match(/\d{8}/)) {
+          formatted =
+            word_text.substring(0, 3) +
+            "." +
+            word_text.substring(3, 6) +
+            "." +
+            word_text.substring(6);
+        } else {
+          formatted =
+            word_text.substring(0, 2) +
+            "." +
+            word_text.substring(2, 5) +
+            "." +
+            word_text.substring(5);
+        }
+        return { katBroj: formatted } as IZapis;
       });
 
       //need to see if there is extra word that needs to be part of katBroj word
