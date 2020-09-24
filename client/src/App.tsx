@@ -101,14 +101,17 @@ function App() {
           } else {
             // if index is last check in space below
             const word1bb = getBoundingBox(katBrojWords[i], pages[0]);
-            const [wordBetween] = getWordsInBoundsWithRegex(/.*/, pages[0], {
+            const [wordBelow] = getWordsInBoundsWithRegex(/.*/, pages[0], {
               x1: word1bb.left,
               x2: word1bb.right,
               y1: word1bb.bottom,
               y2: word1bb.bottom + word1bb.height,
             });
-            if (wordBetween) {
-              tempZapisi[i].katBroj += extractTextFromWord(wordBetween);
+            if (wordBelow) {
+              const wordBelow_text = extractTextFromWord(wordBelow);
+              if (!wordBelow_text.match(/ukupno/i)) {
+                tempZapisi[i].katBroj += wordBelow_text;
+              }
             }
 
             const nazivWords = getWordsInBoundsWithRegex(/.*/, pages[0], {
