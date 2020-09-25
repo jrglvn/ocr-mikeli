@@ -30,7 +30,7 @@ function App() {
   }, []);
   useEffect(() => {
     if (responseArray && responseArray.length) {
-      setPages(responseArray[1][0].fullTextAnnotation.pages);
+      setPages(responseArray[1]);
       // console.log(responseArray);
     }
   }, [responseArray]);
