@@ -1,15 +1,12 @@
 "use strict";
 const { ImageAnnotatorClient } = require("@google-cloud/vision").v1;
 
-import { TKindOfDocument, dispatch } from ".";
+import { dispatch } from "./dispatch";
 
-export async function parseDocument(
-  file: {
-    data: any;
-    mimetype: "application/pdf" | "image/tiff" | "image/gif";
-  },
-  kind: TKindOfDocument
-) {
+export async function parseDocument(file: {
+  data: any;
+  mimetype: "application/pdf" | "image/tiff" | "image/gif";
+}) {
   const client = new ImageAnnotatorClient();
 
   async function batchAnnotateFiles() {
@@ -21,7 +18,6 @@ export async function parseDocument(
     const fileRequest = {
       inputConfig: inputConfig,
       features: features,
-      pages: [1, 2, 3, 4, 5],
     };
     const request = {
       requests: [fileRequest],
@@ -30,9 +26,9 @@ export async function parseDocument(
     return result.responses[0].responses;
   }
 
-  let result = await batchAnnotateFiles();
-  let pages = result[0].fullTextAnnotation.pages;
+  let visonRawResult = await batchAnnotateFiles();
+  let pages = visonRawResult[0].fullTextAnnotation.pages;
+  let textArray = visonRawResult[0].fullTextAnnotation.text.split(/\r?\n/);
 
-  const textToArray = result[0].fullTextAnnotation.text.split(/\r?\n/);
-  return [dispatch(kind, textToArray, pages), result];
+  return [dispatch({ pages, textArray }), pages];
 }
