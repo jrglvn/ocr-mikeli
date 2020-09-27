@@ -1,36 +1,32 @@
 import * as _ from "./_shared";
+import { IPage } from "../vision";
 
-export const parseUnimar = ({
-  pages,
-  textArray,
-}: {
-  pages: Array<any>;
-  textArray: Array<string>;
-}): _.IDocument | any => {
+export const parseUnimar = (pages: Array<IPage>): _.IDocument | any => {
+  const firstPage = pages[0].pageData;
   let returnObject = { artikli: [] } as _.IDocument;
 
   //first occuring date is date of document
   const [firstDate] = _.findWordsInBoundsWithRegex(
     /\d{1,2}\.\d{1,2}\.\d{4}/,
-    pages[0]
+    firstPage
   );
-  returnObject.datum_racuna = _.extractTextFromWord(firstDate);
+  if (firstDate) returnObject.datum_racuna = _.extractTextFromWord(firstDate);
 
   //first word with this regex is number of document
   const [brojRacuna] = _.findWordsInBoundsWithRegex(
     /\d{1,4}-\d{2}-\d{2}/,
-    pages[0]
+    firstPage
   );
-  returnObject.broj_racuna = _.extractTextFromWord(brojRacuna);
+  if (brojRacuna) returnObject.broj_racuna = _.extractTextFromWord(brojRacuna);
 
   //first word with this regex is number of document
-  const [firstOib] = _.findWordsInBoundsWithRegex(/^\d{11}$/, pages[0]);
-  returnObject.dobavljac_oib = _.extractTextFromWord(firstOib);
+  const [firstOib] = _.findWordsInBoundsWithRegex(/^\d{11}$/, firstPage);
+  if (firstOib) returnObject.dobavljac_oib = _.extractTextFromWord(firstOib);
 
   //find words that should be art.number
   const katBrojWords = _.findWordsInBoundsWithRegex(
     /^\d{7,8}(\w?){2,3}/,
-    pages[0],
+    firstPage,
     {
       x1: 0,
       x2: 0.175,
@@ -46,15 +42,15 @@ export const parseUnimar = ({
   //#check in space below/between katbroj for extra characters that belong to katbroj
   for (let i = 0; i < katBrojWords.length; i++) {
     const currentWord = katBrojWords[i];
-    const currentWordBoundingBox = _.getBoundingBox(currentWord, pages[0]);
+    const currentWordBoundingBox = _.getBoundingBox(currentWord, firstPage);
     let temp = _.extractTextFromWord(currentWord);
 
     const bottomOfLookup =
       i !== katBrojWords.length - 1
-        ? _.getBoundingBox(katBrojWords[i + 1], pages[0]).top
+        ? _.getBoundingBox(katBrojWords[i + 1], firstPage).top
         : currentWordBoundingBox.bottom + currentWordBoundingBox.height;
 
-    const [extraWord] = _.findWordsInBoundsWithRegex(/.*/, pages[0], {
+    const [extraWord] = _.findWordsInBoundsWithRegex(/.*/, firstPage, {
       x1: currentWordBoundingBox.left,
       x2: currentWordBoundingBox.right,
       y1: currentWordBoundingBox.bottom,
@@ -87,17 +83,17 @@ export const parseUnimar = ({
   //# check in zone right to find names of items also use free space below for extra words
   for (let i = 0; i < katBrojWords.length; i++) {
     const currentWord = katBrojWords[i];
-    const currentWordBoundingBox = _.getBoundingBox(currentWord, pages[0]);
+    const currentWordBoundingBox = _.getBoundingBox(currentWord, firstPage);
 
     const bottomOffset =
       i !== katBrojWords.length - 1
-        ? _.getBoundingBox(katBrojWords[i + 1], pages[0]).top -
+        ? _.getBoundingBox(katBrojWords[i + 1], firstPage).top -
           currentWordBoundingBox.bottom
         : currentWordBoundingBox.height;
 
     const nazivWords = _.findAdjacentWordsWithRegex(
       /.*/,
-      pages[0],
+      firstPage,
       {
         element: currentWord,
         offset: { y2: bottomOffset },
@@ -126,7 +122,7 @@ export const parseUnimar = ({
     const currentWord = katBrojWords[i];
     const [jmj] = _.findAdjacentWordsWithRegex(
       /.*/,
-      pages[0],
+      firstPage,
       {
         element: currentWord,
       },
@@ -144,7 +140,7 @@ export const parseUnimar = ({
     const currentWord = katBrojWords[i];
     const [kolicina] = _.findAdjacentWordsWithRegex(
       /.*/,
-      pages[0],
+      firstPage,
       {
         element: currentWord,
       },
@@ -162,7 +158,7 @@ export const parseUnimar = ({
     const currentWord = katBrojWords[i];
     const [vpc] = _.findAdjacentWordsWithRegex(
       /.*/,
-      pages[0],
+      firstPage,
       {
         element: currentWord,
       },
@@ -180,7 +176,7 @@ export const parseUnimar = ({
     const currentWord = katBrojWords[i];
     const [rabat] = _.findAdjacentWordsWithRegex(
       /.*/,
-      pages[0],
+      firstPage,
       {
         element: currentWord,
       },
@@ -198,7 +194,7 @@ export const parseUnimar = ({
     const currentWord = katBrojWords[i];
     const [pdv] = _.findAdjacentWordsWithRegex(
       /.*/,
-      pages[0],
+      firstPage,
       {
         element: currentWord,
       },

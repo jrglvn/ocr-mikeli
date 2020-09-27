@@ -1,5 +1,6 @@
 export interface IArtikl {
   kat_broj?: string;
+  bar_code?: string;
   naziv?: string;
   jmj?: string;
   kolicina?: number;

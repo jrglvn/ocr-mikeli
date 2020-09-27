@@ -3,6 +3,11 @@ const { ImageAnnotatorClient } = require("@google-cloud/vision").v1;
 
 import { dispatch } from "./dispatch";
 
+export interface IPage {
+  pageData: any;
+  text: string;
+}
+
 export async function parseDocument(file: {
   data: any;
   mimetype: "application/pdf" | "image/tiff" | "image/gif";
@@ -26,12 +31,15 @@ export async function parseDocument(file: {
     return result.responses[0].responses;
   }
 
-  let visonRawResult = await batchAnnotateFiles();
-  let pages = visonRawResult[0].fullTextAnnotation.pages;
-  let textArray = visonRawResult[0].fullTextAnnotation.text.split(/\r?\n/);
+  let visionResult = await batchAnnotateFiles();
 
-  return [
-    dispatch({ pages, textArray }),
-    { pages, text: visonRawResult[0].fullTextAnnotation.text },
-  ];
+  const pages: Array<IPage> = [];
+  visionResult.forEach((result) =>
+    pages.push({
+      pageData: result.fullTextAnnotation.pages[0],
+      text: result.fullTextAnnotation.text,
+    })
+  );
+
+  return [dispatch(pages), pages];
 }
