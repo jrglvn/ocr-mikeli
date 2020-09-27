@@ -30,5 +30,8 @@ export async function parseDocument(file: {
   let pages = visonRawResult[0].fullTextAnnotation.pages;
   let textArray = visonRawResult[0].fullTextAnnotation.text.split(/\r?\n/);
 
-  return [dispatch({ pages, textArray }), pages];
+  return [
+    dispatch({ pages, textArray }),
+    { pages, text: visonRawResult[0].fullTextAnnotation.text },
+  ];
 }

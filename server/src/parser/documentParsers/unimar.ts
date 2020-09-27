@@ -9,12 +9,31 @@ export const parseUnimar = ({
 }): _.IDocument | any => {
   let returnObject = { artikli: [] } as _.IDocument;
 
+  //first occuring date is date of document
+  const [firstDate] = _.findWordsInBoundsWithRegex(
+    /\d{1,2}\.\d{1,2}\.\d{4}/,
+    pages[0]
+  );
+  returnObject.datum_racuna = _.extractTextFromWord(firstDate);
+
+  //first word with this regex is number of document
+  const [brojRacuna] = _.findWordsInBoundsWithRegex(
+    /\d{1,4}-\d{2}-\d{2}/,
+    pages[0]
+  );
+  returnObject.broj_racuna = _.extractTextFromWord(brojRacuna);
+
+  //first word with this regex is number of document
+  const [firstOib] = _.findWordsInBoundsWithRegex(/^\d{11}$/, pages[0]);
+  returnObject.dobavljac_oib = _.extractTextFromWord(firstOib);
+
+  //find words that should be art.number
   const katBrojWords = _.findWordsInBoundsWithRegex(
-    /\d{7,8}(\w?){2,3}/,
+    /^\d{7,8}(\w?){2,3}/,
     pages[0],
     {
       x1: 0,
-      x2: 0.2,
+      x2: 0.175,
     }
   );
 
@@ -41,7 +60,7 @@ export const parseUnimar = ({
       y1: currentWordBoundingBox.bottom,
       y2: bottomOfLookup,
     });
-    if (extraWord) {
+    if (extraWord && !extraWord[0]?.match(/ukupno/i)) {
       temp += _.extractTextFromWord(extraWord);
     }
 
@@ -90,6 +109,7 @@ export const parseUnimar = ({
         _.extractTextFromWord(word)
       );
       nazivWordsText.splice(1, 0, returnObject.artikli[i].kat_broj);
+      nazivWordsText[0] = nazivWordsText[0].toString().toUpperCase();
       returnObject.artikli[i].naziv = nazivWordsText.join(" ");
       while (true) {
         const token = returnObject.artikli[i].naziv?.match(/\s+?([\W\D])\s+?/);
@@ -101,7 +121,7 @@ export const parseUnimar = ({
       }
     }
   }
-
+  // find jedinicne mjere value
   for (let i = 0; i < katBrojWords.length; i++) {
     const currentWord = katBrojWords[i];
     const [jmj] = _.findAdjacentWordsWithRegex(
@@ -119,6 +139,7 @@ export const parseUnimar = ({
     }
   }
 
+  //find kolicina words
   for (let i = 0; i < katBrojWords.length; i++) {
     const currentWord = katBrojWords[i];
     const [kolicina] = _.findAdjacentWordsWithRegex(
@@ -136,6 +157,7 @@ export const parseUnimar = ({
     }
   }
 
+  //find vpc words
   for (let i = 0; i < katBrojWords.length; i++) {
     const currentWord = katBrojWords[i];
     const [vpc] = _.findAdjacentWordsWithRegex(
@@ -153,6 +175,7 @@ export const parseUnimar = ({
     }
   }
 
+  //find rabat words
   for (let i = 0; i < katBrojWords.length; i++) {
     const currentWord = katBrojWords[i];
     const [rabat] = _.findAdjacentWordsWithRegex(
@@ -170,6 +193,7 @@ export const parseUnimar = ({
     }
   }
 
+  //find pdv value word, and from it calculate PDV_rate
   for (let i = 0; i < katBrojWords.length; i++) {
     const currentWord = katBrojWords[i];
     const [pdv] = _.findAdjacentWordsWithRegex(
@@ -194,30 +218,7 @@ export const parseUnimar = ({
     }
   }
 
-  const [firstDate] = _.findWordsInBoundsWithRegex(
-    /\d{1,2}\.\d{1,2}\.\d{4}/,
-    pages[0]
-  );
-  returnObject.datum_racuna = _.extractTextFromWord(firstDate);
-
-  const [brojRacuna] = _.findWordsInBoundsWithRegex(
-    /\d{1,4}-\d{2}-\d{2}/,
-    pages[0]
-  );
-  returnObject.broj_racuna = _.extractTextFromWord(brojRacuna);
-
-  // setPrimka({
-  //   datum_racuna: extractTextFromWord(firstDate),
-  //   broj_racuna: extractTextFromWord(brojRacuna),
-  //   ukupno: tempZapisi?.reduce(
-  //     (accumulator: number, current: IZapis) =>
-  //       accumulator +
-  //       (current?.vpc! * current?.kol! * (100 - current?.rabat!)) / 100,
-  //     0
-  //   ),
-  //   artikli: tempZapisi,
-  // });
-
   console.log(returnObject);
+
   return returnObject;
 };

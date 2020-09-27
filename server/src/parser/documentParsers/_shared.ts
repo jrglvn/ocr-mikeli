@@ -41,14 +41,15 @@ export const findAdjacentWordsWithRegex = (
   const source_box = getBoundingBox(source.element, page);
   const foundWords: Array<any> = [];
   page.blocks.forEach((block) => {
+    const vertices = block.boundingBox.normalizedVertices.length
+      ? block.boundingBox.normalizedVertices
+      : block.boundingBox.vertices;
+    let slope =
+      (vertices[1].y - vertices[0].y) / (vertices[1].x - vertices[0].x);
+
+    slope = 0; // console.log(extractTextFromWord(source.element), " slope: ", slope);
+
     block.paragraphs.forEach((paragraph) => {
-      const vertices = paragraph.boundingBox.normalizedVertices.length
-        ? paragraph.boundingBox.normalizedVertices
-        : paragraph.boundingBox.vertices;
-      let slope =
-        (vertices[1].y - vertices[0].y) / (vertices[1].x - vertices[0].x);
-      slope = 0;
-      // console.log(extractTextFromWord(source.element), " slope: ", slope);
       paragraph.words.forEach((word) => {
         const word_text = extractTextFromWord(word);
         if (word_text.match(regex)) {
