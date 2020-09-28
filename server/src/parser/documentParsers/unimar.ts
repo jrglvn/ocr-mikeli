@@ -1,218 +1,211 @@
-import * as _ from "./_shared";
+import * as foo from "./_shared";
 import { IPage } from "../vision";
 
-export const parseUnimar = (pages: Array<IPage>): _.IDocument | any => {
+export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
   const firstPage = pages[0].pageData;
-  let returnObject = { artikli: [] } as _.IDocument;
+  let returnObject = { artikli: [] } as foo.IDocument;
 
   //first occuring date is date of document
-  const [firstDate] = _.findWordsInBoundsWithRegex(
+  const [firstDate] = foo.findWordsInBoundsWithRegex(
     /\d{1,2}\.\d{1,2}\.\d{4}/,
     firstPage
   );
-  if (firstDate) returnObject.datum_racuna = _.extractTextFromWord(firstDate);
+  if (firstDate) returnObject.datum_racuna = foo.extractTextFromWord(firstDate);
 
   //first word with this regex is number of document
-  const [brojRacuna] = _.findWordsInBoundsWithRegex(
+  const [brojRacuna] = foo.findWordsInBoundsWithRegex(
     /\d{1,4}-\d{2}-\d{2}/,
     firstPage
   );
-  if (brojRacuna) returnObject.broj_racuna = _.extractTextFromWord(brojRacuna);
+  if (brojRacuna)
+    returnObject.broj_racuna = foo.extractTextFromWord(brojRacuna);
 
   //first word with this regex is number of document
-  const [firstOib] = _.findWordsInBoundsWithRegex(/^\d{11}$/, firstPage);
-  if (firstOib) returnObject.dobavljac_oib = _.extractTextFromWord(firstOib);
+  const [firstOib] = foo.findWordsInBoundsWithRegex(/^\d{11}$/, firstPage);
+  if (firstOib) returnObject.dobavljac_oib = foo.extractTextFromWord(firstOib);
 
-  //find words that should be art.number
-  const katBrojWords = _.findWordsInBoundsWithRegex(
-    /^\d{7,8}(\w?){2,3}/,
-    firstPage,
-    {
-      x1: 0,
-      x2: 0.175,
-    }
-  );
-
-  //#initialize array of empty IArtikl objects
-
-  for (let i = 0; i < katBrojWords.length; i++) {
-    returnObject.artikli.push({} as _.IArtikl);
-  }
-
-  //#check in space below/between katbroj for extra characters that belong to katbroj
-  for (let i = 0; i < katBrojWords.length; i++) {
-    const currentWord = katBrojWords[i];
-    const currentWordBoundingBox = _.getBoundingBox(currentWord, firstPage);
-    let temp = _.extractTextFromWord(currentWord);
-
-    const bottomOfLookup =
-      i !== katBrojWords.length - 1
-        ? _.getBoundingBox(katBrojWords[i + 1], firstPage).top
-        : currentWordBoundingBox.bottom + currentWordBoundingBox.height;
-
-    const [extraWord] = _.findWordsInBoundsWithRegex(/.*/, firstPage, {
-      x1: currentWordBoundingBox.left,
-      x2: currentWordBoundingBox.right,
-      y1: currentWordBoundingBox.bottom,
-      y2: bottomOfLookup,
-    });
-    if (extraWord && !extraWord[0]?.match(/ukupno/i)) {
-      temp += _.extractTextFromWord(extraWord);
-    }
-
-    let formatted: string;
-
-    if (temp.match(/\d{8}/)) {
-      formatted =
-        temp.substring(0, 3) +
-        "." +
-        temp.substring(3, 6) +
-        "." +
-        temp.substring(6);
-    } else {
-      formatted =
-        temp.substring(0, 2) +
-        "." +
-        temp.substring(2, 5) +
-        "." +
-        temp.substring(5);
-    }
-    returnObject.artikli[i].kat_broj = formatted;
-  }
-
-  //# check in zone right to find names of items also use free space below for extra words
-  for (let i = 0; i < katBrojWords.length; i++) {
-    const currentWord = katBrojWords[i];
-    const currentWordBoundingBox = _.getBoundingBox(currentWord, firstPage);
-
-    const bottomOffset =
-      i !== katBrojWords.length - 1
-        ? _.getBoundingBox(katBrojWords[i + 1], firstPage).top -
-          currentWordBoundingBox.bottom
-        : currentWordBoundingBox.height;
-
-    const nazivWords = _.findAdjacentWordsWithRegex(
-      /.*/,
-      firstPage,
+  pages.forEach((page) => {
+    const currentPage = page.pageData;
+    //find words that should be art.number
+    const katBrojWords = foo.findWordsInBoundsWithRegex(
+      /^\d{7,8}(\w?){2,3}/,
+      currentPage,
       {
-        element: currentWord,
-        offset: { y2: bottomOffset },
-      },
-      { x1: 0.15, x2: 0.375 }
+        x1: 0,
+        x2: 0.175,
+      }
     );
-    if (nazivWords && nazivWords.length) {
-      const nazivWordsText = nazivWords.map((word) =>
-        _.extractTextFromWord(word)
+
+    //#initialize array of empty IArtikl objects
+
+    katBrojWords?.forEach((currentWord, index) => {
+      //set default values
+      let currentArtikl = {
+        bar_code: "",
+        jmj: "",
+        kat_broj: "",
+        naziv: "",
+        kolicina: -1,
+        rabat: -1,
+        vpc: -1,
+        pdv_stopa: 25,
+      } as foo.IArtikl;
+
+      //#check in space below/between katbroj for extra characters that belong to katbroj
+      const currentWordBoundingBox = foo.getBoundingBox(
+        currentWord,
+        currentPage
       );
-      nazivWordsText.splice(1, 0, returnObject.artikli[i].kat_broj);
-      nazivWordsText[0] = nazivWordsText[0].toString().toUpperCase();
-      returnObject.artikli[i].naziv = nazivWordsText.join(" ");
-      while (true) {
-        const token = returnObject.artikli[i].naziv?.match(/\s+?([\W\D])\s+?/);
-        if (!token) break;
-        returnObject.artikli[i].naziv = returnObject.artikli[i].naziv?.replace(
-          /\s+?[\W\D]\s+?/,
-          token[1]
+      let temp = foo.extractTextFromWord(currentWord);
+
+      const bottomOfLookup =
+        index !== katBrojWords.length - 1
+          ? foo.getBoundingBox(katBrojWords[index + 1], currentPage).top
+          : currentWordBoundingBox.bottom + currentWordBoundingBox.height;
+
+      const [extraWord] = foo.findWordsInBoundsWithRegex(/.*/, currentPage, {
+        x1: currentWordBoundingBox.left,
+        x2: currentWordBoundingBox.right,
+        y1: currentWordBoundingBox.bottom,
+        y2: bottomOfLookup,
+      });
+      if (extraWord && !extraWord[0]?.match(/ukupno/i)) {
+        temp += foo.extractTextFromWord(extraWord);
+      }
+
+      let formatted: string;
+
+      if (temp.match(/\d{8}/)) {
+        formatted =
+          temp.substring(0, 3) +
+          "." +
+          temp.substring(3, 6) +
+          "." +
+          temp.substring(6);
+      } else {
+        formatted =
+          temp.substring(0, 2) +
+          "." +
+          temp.substring(2, 5) +
+          "." +
+          temp.substring(5);
+      }
+      currentArtikl.kat_broj = formatted;
+
+      const nazivWords = foo.findAdjacentWordsWithRegex(
+        /.*/,
+        currentPage,
+        {
+          element: currentWord,
+          offset: { y2: bottomOfLookup },
+        },
+        { x1: 0.15, x2: 0.375 }
+      );
+      if (nazivWords?.length) {
+        const nazivWordsText = nazivWords.map((word) =>
+          foo.extractTextFromWord(word)
+        );
+        nazivWordsText.splice(1, 0, currentArtikl.kat_broj);
+        nazivWordsText[0] = nazivWordsText[0].toString().toUpperCase();
+        currentArtikl.naziv = nazivWordsText.join(" ");
+        while (true) {
+          const token = currentArtikl.naziv?.match(/\s+?([\W\D])\s+?/);
+          if (!token) break;
+          currentArtikl.naziv = currentArtikl.naziv?.replace(
+            /\s+?[\W\D]\s+?/,
+            token[1]
+          );
+        }
+      }
+
+      // find jedinicne mjere value
+
+      const [jmjWord] = foo.findAdjacentWordsWithRegex(
+        /.*/,
+        currentPage,
+        {
+          element: currentWord,
+        },
+        { x1: 0.375, x2: 0.42 }
+      );
+      if (jmjWord) {
+        currentArtikl.jmj = foo
+          .extractTextFromWord(jmjWord)
+          .toString()
+          .toLowerCase();
+      }
+
+      //find kolicina words
+
+      const [kolicinaWord] = foo.findAdjacentWordsWithRegex(
+        /.*/,
+        currentPage,
+        {
+          element: currentWord,
+        },
+        { x1: 0.42, x2: 0.5 }
+      );
+      if (kolicinaWord) {
+        currentArtikl.kolicina = parseFloat(
+          foo
+            .extractTextFromWord(kolicinaWord)
+            .replace(".", "")
+            .replace(",", ".")
         );
       }
-    }
-  }
-  // find jedinicne mjere value
-  for (let i = 0; i < katBrojWords.length; i++) {
-    const currentWord = katBrojWords[i];
-    const [jmj] = _.findAdjacentWordsWithRegex(
-      /.*/,
-      firstPage,
-      {
-        element: currentWord,
-      },
-      { x1: 0.375, x2: 0.42 }
-    );
-    if (jmj) {
-      returnObject.artikli[i].jmj = _.extractTextFromWord(jmj)
-        .toString()
-        .toLowerCase();
-    }
-  }
 
-  //find kolicina words
-  for (let i = 0; i < katBrojWords.length; i++) {
-    const currentWord = katBrojWords[i];
-    const [kolicina] = _.findAdjacentWordsWithRegex(
-      /.*/,
-      firstPage,
-      {
-        element: currentWord,
-      },
-      { x1: 0.42, x2: 0.5 }
-    );
-    if (kolicina) {
-      returnObject.artikli[i].kolicina = parseFloat(
-        _.extractTextFromWord(kolicina).replace(".", "").replace(",", ".")
+      //find vpc words
+      const [vpcWord] = foo.findAdjacentWordsWithRegex(
+        /.*/,
+        currentPage,
+        {
+          element: currentWord,
+        },
+        { x1: 0.5, x2: 0.6 }
       );
-    }
-  }
+      if (vpcWord) {
+        currentArtikl.vpc = parseFloat(
+          foo.extractTextFromWord(vpcWord).replace(".", "").replace(",", ".")
+        );
+      }
 
-  //find vpc words
-  for (let i = 0; i < katBrojWords.length; i++) {
-    const currentWord = katBrojWords[i];
-    const [vpc] = _.findAdjacentWordsWithRegex(
-      /.*/,
-      firstPage,
-      {
-        element: currentWord,
-      },
-      { x1: 0.5, x2: 0.6 }
-    );
-    if (vpc) {
-      returnObject.artikli[i].vpc = parseFloat(
-        _.extractTextFromWord(vpc).replace(".", "").replace(",", ".")
-      );
-    }
-  }
+      //find rabat words
 
-  //find rabat words
-  for (let i = 0; i < katBrojWords.length; i++) {
-    const currentWord = katBrojWords[i];
-    const [rabat] = _.findAdjacentWordsWithRegex(
-      /.*/,
-      firstPage,
-      {
-        element: currentWord,
-      },
-      { x1: 0.65, x2: 0.75 }
-    );
-    if (rabat) {
-      returnObject.artikli[i].rabat = parseFloat(
-        _.extractTextFromWord(rabat).replace(".", "").replace(",", ".")
+      const [rabatWord] = foo.findAdjacentWordsWithRegex(
+        /.*/,
+        currentPage,
+        {
+          element: currentWord,
+        },
+        { x1: 0.65, x2: 0.75 }
       );
-    }
-  }
+      if (rabatWord) {
+        currentArtikl.rabat = parseFloat(
+          foo.extractTextFromWord(rabatWord).replace(".", "").replace(",", ".")
+        );
+      }
 
-  //find pdv value word, and from it calculate PDV_rate
-  for (let i = 0; i < katBrojWords.length; i++) {
-    const currentWord = katBrojWords[i];
-    const [pdv] = _.findAdjacentWordsWithRegex(
-      /.*/,
-      firstPage,
-      {
-        element: currentWord,
-      },
-      { x1: 0.8, x2: 0.875 }
-    );
-    if (pdv) {
-      returnObject.artikli[i].pdv_stopa = Math.round(
-        (parseFloat(
-          _.extractTextFromWord(pdv).replace(".", "").replace(",", ".")
-        ) /
-          (((returnObject.artikli[i].vpc! *
-            (100 - returnObject.artikli[i].rabat!)) /
-            100) *
-            returnObject.artikli[i].kolicina!)) *
-          100
+      //find pdv value word, and from it calculate PDV_rate
+      const [pdvWord] = foo.findAdjacentWordsWithRegex(
+        /.*/,
+        currentPage,
+        {
+          element: currentWord,
+        },
+        { x1: 0.8, x2: 0.875 }
       );
-    }
-  }
+      if (pdvWord) {
+        currentArtikl.pdv_stopa = Math.round(
+          (parseFloat(
+            foo.extractTextFromWord(pdvWord).replace(".", "").replace(",", ".")
+          ) /
+            (((currentArtikl.vpc! * (100 - currentArtikl.rabat!)) / 100) *
+              currentArtikl.kolicina!)) *
+            100
+        );
+      }
+    });
+  });
 
   console.log(returnObject);
 

@@ -28,10 +28,11 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
 
   //iterate trought pages to find
   pages.forEach((page) => {
+    const currentPage = page.pageData;
     //find words that should be broj_artikla, and they server as search point for all other
     const katBrojWords = foo.findWordsInBoundsWithRegex(
       /^\d{5}$/,
-      page.pageData,
+      currentPage,
       {
         x1: 0.075,
         x2: 0.125,
@@ -39,8 +40,17 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
     );
 
     katBrojWords?.forEach((currentWord) => {
-      let currentArtikl = {} as foo.IArtikl;
-      currentArtikl.pdv_stopa = 25.0;
+      //set default values
+      let currentArtikl = {
+        bar_code: "",
+        jmj: "",
+        kat_broj: "",
+        naziv: "",
+        kolicina: -1,
+        rabat: -1,
+        vpc: -1,
+        pdv_stopa: 25,
+      } as foo.IArtikl;
 
       //get kat_broj value from found object
       currentArtikl.kat_broj = foo.extractTextFromWord(currentWord);
@@ -48,7 +58,7 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
       //get bar_code word and extract text from it
       const [barcodeWord] = foo.findAdjacentWordsWithRegex(
         /\d{13}/,
-        page.pageData,
+        currentPage,
         { element: currentWord },
         { x1: 0.15, x2: 0.25 }
       );
@@ -57,7 +67,7 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
 
       const nazivWords = foo.findAdjacentWordsWithRegex(
         /.*/,
-        page.pageData,
+        currentPage,
         { element: currentWord },
         { x1: 0.25, x2: 0.5 }
       );
@@ -68,7 +78,7 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
 
       const [jmjWord] = foo.findAdjacentWordsWithRegex(
         /\w+/,
-        page.pageData,
+        currentPage,
         { element: currentWord },
         { x1: 0.55, x2: 0.625 }
       );
@@ -76,7 +86,7 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
 
       const [kolicinaWord] = foo.findAdjacentWordsWithRegex(
         /\d+/,
-        page.pageData,
+        currentPage,
         { element: currentWord },
         { x1: 0.625, x2: 0.7 }
       );
@@ -87,7 +97,7 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
 
       const [cijenaWord] = foo.findAdjacentWordsWithRegex(
         /.*/,
-        page.pageData,
+        currentPage,
         { element: currentWord },
         { x1: 0.7, x2: 0.75 }
       );
@@ -102,7 +112,7 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
 
       const [rabatWord] = foo.findAdjacentWordsWithRegex(
         /.*/,
-        page.pageData,
+        currentPage,
         { element: currentWord },
         { x1: 0.75, x2: 0.78 }
       );
@@ -123,12 +133,13 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
 
   console.log(
     "ukupno: ",
-    returnObject.artikli.reduce((acc: number, current: foo.IArtikl) => {
-      return acc + current?.kolicina!;
-    }, 0)
+    returnObject.artikli.reduce(
+      (acc: number, current: foo.IArtikl) =>
+        acc +
+        (current!.kolicina! * current!.vpc! * (100 - current!.rabat!)) / 100,
+      0
+    )
   );
-
-  // console.log(returnObject);
 
   return returnObject;
 };
