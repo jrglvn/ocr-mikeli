@@ -131,15 +131,15 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
     });
   });
 
-  console.log(
-    "ukupno: ",
-    returnObject.artikli.reduce(
-      (acc: number, current: foo.IArtikl) =>
-        acc +
-        (current!.kolicina! * current!.vpc! * (100 - current!.rabat!)) / 100,
-      0
-    )
-  );
+  // console.log(
+  //   "ukupno: ",
+  //   returnObject.artikli.reduce(
+  //     (acc: number, current: foo.IArtikl) =>
+  //       acc +
+  //       (current!.kolicina! * current!.vpc! * (100 - current!.rabat!)) / 100,
+  //     0
+  //   )
+  // );
 
   return returnObject;
 };

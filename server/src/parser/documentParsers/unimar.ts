@@ -2,8 +2,8 @@ import * as foo from "./_shared";
 import { IPage } from "../vision";
 
 export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
-  const firstPage = pages[0].pageData;
   let returnObject = { artikli: [] } as foo.IDocument;
+  const firstPage = pages[0].pageData;
 
   //first occuring date is date of document
   const [firstDate] = foo.findWordsInBoundsWithRegex(
@@ -92,15 +92,12 @@ export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
       }
       currentArtikl.kat_broj = formatted;
 
-      const nazivWords = foo.findAdjacentWordsWithRegex(
-        /.*/,
-        currentPage,
-        {
-          element: currentWord,
-          offset: { y2: bottomOfLookup },
-        },
-        { x1: 0.15, x2: 0.375 }
-      );
+      const nazivWords = foo.findWordsInBoundsWithRegex(/.*/, currentPage, {
+        x1: 0.15,
+        x2: 0.375,
+        y1: currentWordBoundingBox.top,
+        y2: bottomOfLookup,
+      });
       if (nazivWords?.length) {
         const nazivWordsText = nazivWords.map((word) =>
           foo.extractTextFromWord(word)
@@ -170,7 +167,6 @@ export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
       }
 
       //find rabat words
-
       const [rabatWord] = foo.findAdjacentWordsWithRegex(
         /.*/,
         currentPage,
@@ -184,30 +180,29 @@ export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
           foo.extractTextFromWord(rabatWord).replace(".", "").replace(",", ".")
         );
       }
-
+      //ignored because all items from this suplier have 25% PDV
       //find pdv value word, and from it calculate PDV_rate
-      const [pdvWord] = foo.findAdjacentWordsWithRegex(
-        /.*/,
-        currentPage,
-        {
-          element: currentWord,
-        },
-        { x1: 0.8, x2: 0.875 }
-      );
-      if (pdvWord) {
-        currentArtikl.pdv_stopa = Math.round(
-          (parseFloat(
-            foo.extractTextFromWord(pdvWord).replace(".", "").replace(",", ".")
-          ) /
-            (((currentArtikl.vpc! * (100 - currentArtikl.rabat!)) / 100) *
-              currentArtikl.kolicina!)) *
-            100
-        );
-      }
+      // const [pdvWord] = foo.findAdjacentWordsWithRegex(
+      //   /.*/,
+      //   currentPage,
+      //   {
+      //     element: currentWord,
+      //   },
+      //   { x1: 0.8, x2: 0.875 }
+      // );
+      // if (pdvWord) {
+      //   currentArtikl.pdv_stopa = Math.round(
+      //     (parseFloat(
+      //       foo.extractTextFromWord(pdvWord).replace(".", "").replace(",", ".")
+      //     ) /
+      //       (((currentArtikl.vpc! * (100 - currentArtikl.rabat!)) / 100) *
+      //         currentArtikl.kolicina!)) *
+      //       100
+      //   );
+      // }
+      returnObject.artikli.push(currentArtikl);
     });
   });
-
-  console.log(returnObject);
 
   return returnObject;
 };
