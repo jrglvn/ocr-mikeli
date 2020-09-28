@@ -105,14 +105,16 @@ export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
         nazivWordsText.splice(1, 0, currentArtikl.kat_broj);
         nazivWordsText[0] = nazivWordsText[0].toString().toUpperCase();
         currentArtikl.naziv = nazivWordsText.join(" ");
-        while (true) {
-          const token = currentArtikl.naziv?.match(/\s+?([\W\D])\s+?/);
-          if (!token) break;
-          currentArtikl.naziv = currentArtikl.naziv?.replace(
-            /\s+?[\W\D]\s+?/,
-            token[1]
-          );
-        }
+        // while (true) {
+        //   const token = currentArtikl.naziv?.match(/\s?([^\w\s\.\,])\s?/);
+        //   if (!token) break;
+        //   console.log("token: ", token[1]);
+        //   const temp = currentArtikl.naziv?.replace(
+        //     `/\s?${token[1]}\s?/`,
+        //     token[1]
+        //   );
+        //   currentArtikl.naziv = temp;
+        // }
       }
 
       // find jedinicne mjere value
