@@ -13,7 +13,7 @@ export const dispatch = (pages: Array<IPage>): any => {
     kind = regex_result[0].toString().toUpperCase() as TKindOfDocument;
   }
 
-  if (!kind) return;
+  if (!kind) return { document: "not identified" };
 
   switch (kind) {
     case "UNIMAR":
