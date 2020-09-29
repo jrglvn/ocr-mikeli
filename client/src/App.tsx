@@ -14,7 +14,7 @@ function App() {
 
   useEffect(() => {
     if (responseArray && responseArray.length) {
-      setPages(responseArray[1].pages);
+      setPages(responseArray[1]);
       // console.log(responseArray);
     }
   }, [responseArray]);
@@ -64,12 +64,14 @@ type TElement = {
   text?: string;
 };
 
-const DataToPage = ({ page }) => {
+const DataToPage = (props) => {
   const [words, setWords] = useState<Array<TElement>>([]);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [context, setContext] = React.useState<CanvasRenderingContext2D | null>(
     null
   );
+
+  const page = props.page.pageData;
 
   useEffect(() => {
     page.blocks.forEach((block, index) => {
