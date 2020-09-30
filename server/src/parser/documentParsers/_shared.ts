@@ -11,7 +11,7 @@ export interface IArtikl {
 
 export interface IDocument {
   dobavljac?: string;
-  dobavljac_oib?: string;
+  oib?: string;
   broj_racuna?: string;
   datum_racuna?: string;
   artikli: Array<IArtikl>;

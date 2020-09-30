@@ -14,27 +14,22 @@ export async function parseDocument(file: {
 }) {
   const client = new ImageAnnotatorClient();
 
-  async function batchAnnotateFiles() {
-    const inputConfig = {
-      mimeType: file.mimetype,
-      content: file.data,
-    };
-    const features = [{ type: "DOCUMENT_TEXT_DETECTION" }];
-    const fileRequest = {
-      inputConfig: inputConfig,
-      features: features,
-    };
-    const request = {
-      requests: [fileRequest],
-    };
-    const [result] = await client.batchAnnotateFiles(request);
-    return result.responses[0].responses;
-  }
-
-  let visionResult = await batchAnnotateFiles();
+  const inputConfig = {
+    mimeType: file.mimetype,
+    content: file.data,
+  };
+  const features = [{ type: "DOCUMENT_TEXT_DETECTION" }];
+  const fileRequest = {
+    inputConfig: inputConfig,
+    features: features,
+  };
+  const request = {
+    requests: [fileRequest],
+  };
+  const [visionResult] = await client.batchAnnotateFiles(request);
 
   const pages: Array<IPage> = [];
-  visionResult.forEach((result) =>
+  visionResult.responses[0].responses.forEach((result) =>
     pages.push({
       pageData: result.fullTextAnnotation.pages[0],
       text: result.fullTextAnnotation.text,

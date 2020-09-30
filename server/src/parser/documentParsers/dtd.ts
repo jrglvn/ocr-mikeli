@@ -9,7 +9,7 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
     /^\d{11}$/,
     pages[0].pageData
   );
-  if (firstOib) returnObject.dobavljac_oib = foo.extractTextFromWord(firstOib);
+  if (firstOib) returnObject.oib = foo.extractTextFromWord(firstOib);
 
   //first occuring date is date of document
   const [firstDate] = foo.findWordsInBoundsWithRegex(

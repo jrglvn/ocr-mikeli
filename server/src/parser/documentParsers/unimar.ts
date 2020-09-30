@@ -22,7 +22,7 @@ export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
 
   //first word with this regex is number of document
   const [firstOib] = foo.findWordsInBoundsWithRegex(/^\d{11}$/, firstPage);
-  if (firstOib) returnObject.dobavljac_oib = foo.extractTextFromWord(firstOib);
+  if (firstOib) returnObject.oib = foo.extractTextFromWord(firstOib);
 
   pages.forEach((page) => {
     const currentPage = page.pageData;
