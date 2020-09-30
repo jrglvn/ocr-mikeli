@@ -1,16 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
-import { workerData } from "worker_threads";
+
+export interface IPage {
+  pageData: any;
+  text: string;
+}
 
 function App() {
   const inputFile = useRef<any>(null);
   const [responseArray, setResponseArray] = useState<any>();
   const [pages, setPages] = useState<Array<any>>();
 
-  useEffect(() => {
-    setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
-  }, []);
+  // useEffect(() => {
+  //   setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
+  // }, []);
 
   useEffect(() => {
     if (responseArray && responseArray.length) {
@@ -47,9 +51,9 @@ function App() {
         {responseArray?.length && JSON.stringify(responseArray[0], null, 2)}
       </pre>
 
-      {pages?.map((page, index) => (
+      {/* {pages?.map((page, index) => (
         <DataToPage key={index} page={page} />
-      ))}
+      ))} */}
     </StyledApp>
   );
 }
