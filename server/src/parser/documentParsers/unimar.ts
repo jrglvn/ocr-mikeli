@@ -2,7 +2,10 @@ import * as foo from "./_shared";
 import { IPage } from "../vision";
 
 export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
-  let returnObject = { artikli: [] } as foo.IDocument;
+  let returnObject = {
+    dobavljac: "UNIMAR RIJEKA d.o.o.",
+    artikli: [],
+  } as foo.IDocument;
   const firstPage = pages[0].pageData;
 
   //first occuring date is date of document

@@ -2,7 +2,7 @@ import * as foo from "./_shared";
 import { IPage } from "../vision";
 
 export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
-  let returnObject = { artikli: [] } as foo.IDocument;
+  let returnObject = { dobavljac: "DTD d.o.o", artikli: [] } as foo.IDocument;
 
   //first word with this regex is number of document
   const [firstOib] = foo.findWordsInBoundsWithRegex(
