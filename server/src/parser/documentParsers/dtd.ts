@@ -1,5 +1,5 @@
 import * as foo from "./_shared";
-import { IPage } from "../vision";
+import { IPage } from "../";
 
 export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
   let returnObject = { dobavljac: "DTD d.o.o", artikli: [] } as foo.IDocument;

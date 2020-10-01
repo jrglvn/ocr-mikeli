@@ -1,5 +1,4 @@
 const express = require("express");
-
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const cors = require("cors");
@@ -7,7 +6,8 @@ const app = express();
 
 const port = 3001;
 
-import { parseDocument } from "./parser/vision";
+import * as fs from "fs";
+import { parseDocument } from "./parser";
 
 // enable files upload
 app.use(
@@ -26,6 +26,7 @@ app.get("/", (req, res) => res.send("Hello World!"));
 app.post("/upload", async (req, res) => {
   const file = req.files[Object.keys(req.files)[0]];
   const result = await parseDocument(file);
+  fs.writeFileSync("test.json", JSON.stringify(result[0]));
   res.status(200);
   res.send(result);
 });

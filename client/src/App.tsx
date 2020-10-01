@@ -12,9 +12,9 @@ function App() {
   const [responseArray, setResponseArray] = useState<any>();
   const [pages, setPages] = useState<Array<any>>();
 
-  // useEffect(() => {
-  //   setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
-  // }, []);
+  useEffect(() => {
+    setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
+  }, []);
 
   useEffect(() => {
     if (responseArray && responseArray.length) {
@@ -46,14 +46,12 @@ function App() {
         }}
       />
       <button onClick={() => inputFile.current.click()}>select file</button>
-
+      {pages?.map((page, index) => (
+        <DataToPage key={index} page={page} />
+      ))}
       <pre>
         {responseArray?.length && JSON.stringify(responseArray[0], null, 2)}
       </pre>
-
-      {/* {pages?.map((page, index) => (
-        <DataToPage key={index} page={page} />
-      ))} */}
     </StyledApp>
   );
 }
@@ -110,6 +108,9 @@ const DataToPage = (props) => {
       page.blocks.forEach((block) => {
         block.paragraphs.forEach((paragraph) => {
           const vertices = paragraph.boundingBox.normalizedVertices;
+          let slope =
+            (vertices[1].y - vertices[0].y + vertices[2].y - vertices[3].y) /
+            (vertices[1].x - vertices[0].x + vertices[2].x - vertices[3].x);
           context.translate(0.5, 0.5);
           context.beginPath();
           context.lineWidth = 1;
@@ -137,7 +138,7 @@ const DataToPage = (props) => {
           context.stroke();
           context.translate(-0.5, -0.5);
           paragraph.words.forEach((word) => {
-            if (extractTextFromWord(word).match(/^\d{13}/)) {
+            if (extractTextFromWord(word).match(/.*/)) {
               const vertices = word.boundingBox.normalizedVertices;
               context.translate(0.5, 0.5);
               context.beginPath();
@@ -165,42 +166,36 @@ const DataToPage = (props) => {
               );
               context.stroke();
 
-              let slope =
-                (vertices[1].y -
-                  vertices[0].y +
-                  vertices[2].y -
-                  vertices[3].y) /
-                (vertices[1].x - vertices[0].x + vertices[2].x - vertices[3].x);
-              context.beginPath();
+              // context.beginPath();
 
-              context.moveTo(
-                Math.round(
-                  ((vertices[0].x +
-                    vertices[1].x +
-                    vertices[2].x +
-                    vertices[3].x) /
-                    4) *
-                    page.width
-                ),
-                Math.round(
-                  ((vertices[0].y +
-                    vertices[1].y +
-                    vertices[2].y +
-                    vertices[3].y) /
-                    4) *
-                    page.height
-                )
-              );
-              context.lineTo(
-                page.width,
-                Math.round(
-                  ((vertices[0].y + vertices[3].y) / 2 +
-                    (1 - (vertices[0].x + vertices[3].x) / 2) * slope) *
-                    page.height
-                )
-              );
-              context.strokeStyle = "blue";
-              context.stroke();
+              // context.moveTo(
+              //   Math.round(
+              //     ((vertices[0].x +
+              //       vertices[1].x +
+              //       vertices[2].x +
+              //       vertices[3].x) /
+              //       4) *
+              //       page.width
+              //   ),
+              //   Math.round(
+              //     ((vertices[0].y +
+              //       vertices[1].y +
+              //       vertices[2].y +
+              //       vertices[3].y) /
+              //       4) *
+              //       page.height
+              //   )
+              // );
+              // context.lineTo(
+              //   page.width,
+              //   Math.round(
+              //     ((vertices[0].y + vertices[3].y) / 2 +
+              //       (1 - (vertices[0].x + vertices[3].x) / 2) * slope) *
+              //       page.height
+              //   )
+              // );
+              // context.strokeStyle = "blue";
+              // context.stroke();
 
               context.translate(-0.5, -0.5);
             }
@@ -248,11 +243,11 @@ const DataToPage = (props) => {
           </div>
         ))}
       </div>
-      <pre>
+      {/* <pre>
         {words?.map((word) => (
           <p>{word.text}</p>
         ))}
-      </pre>
+      </pre> */}
     </>
   );
 };
