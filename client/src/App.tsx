@@ -12,9 +12,9 @@ function App() {
   const [responseArray, setResponseArray] = useState<any>();
   const [pages, setPages] = useState<Array<any>>();
 
-  // useEffect(() => {
-  //   setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
-  // }, []);
+  useEffect(() => {
+    setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
+  }, []);
 
   useEffect(() => {
     if (responseArray && responseArray.length) {
@@ -105,6 +105,22 @@ const DataToPage = (props) => {
     }
 
     if (context) {
+      context.beginPath();
+      context.lineWidth = 1;
+      context.strokeStyle = "green";
+      context.translate(0.5, 0.5);
+      context.beginPath();
+      context.moveTo(page.width * 0.2, 0);
+      context.lineTo(page.width * 0.2, page.height);
+      context.moveTo(page.width * 0.4, 0);
+      context.lineTo(page.width * 0.4, page.height);
+      context.moveTo(page.width * 0.6, 0);
+      context.lineTo(page.width * 0.6, page.height);
+      context.moveTo(page.width * 0.8, 0);
+      context.lineTo(page.width * 0.8, page.height);
+      context.stroke();
+      context.translate(-0.5, -0.5);
+
       page.blocks.forEach((block) => {
         block.paragraphs.forEach((paragraph) => {
           const vertices = paragraph.boundingBox.normalizedVertices;
