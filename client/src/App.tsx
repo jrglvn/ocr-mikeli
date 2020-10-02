@@ -12,9 +12,9 @@ function App() {
   const [responseArray, setResponseArray] = useState<any>();
   const [pages, setPages] = useState<Array<any>>();
 
-  useEffect(() => {
-    setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
-  }, []);
+  // useEffect(() => {
+  //   setResponseArray(JSON.parse(localStorage.getItem("ocr")!));
+  // }, []);
 
   useEffect(() => {
     if (responseArray && responseArray.length) {
@@ -243,11 +243,11 @@ const DataToPage = (props) => {
           </div>
         ))}
       </div>
-      {/* <pre>
+      <pre>
         {words?.map((word) => (
           <p>{word.text}</p>
         ))}
-      </pre> */}
+      </pre>
     </>
   );
 };
