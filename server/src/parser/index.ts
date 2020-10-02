@@ -36,10 +36,11 @@ export async function parseDocument(file: {
   return [dispatch(pages), pages];
 }
 
-export type TKindOfDocument = "UNIMAR" | "VENICO" | "DTD";
+export type TKindOfDocument = "UNIMAR" | "VENICO" | "DTD" | "M.A.G.D.D.";
 
 import { parseUnimar } from "./documentParsers/unimar";
 import { parseDtd } from "./documentParsers/dtd";
+import { parseMagdd } from "./documentParsers/magdd";
 
 export const dispatch = (pages: Array<IPage>): any => {
   let kind: TKindOfDocument | undefined;
@@ -49,12 +50,14 @@ export const dispatch = (pages: Array<IPage>): any => {
     kind = regex_result[0].toString().toUpperCase() as TKindOfDocument;
   }
 
-  if (!kind) return { document: "not identified" };
+  if (!kind) return { error: "not identified" };
 
   switch (kind) {
     case "UNIMAR":
       return parseUnimar(pages);
     case "DTD":
       return parseDtd(pages);
+    case "M.A.G.D.D.":
+      return parseMagdd(pages);
   }
 };

@@ -4,6 +4,7 @@ import { IPage } from "../";
 export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
   let returnObject = {
     dobavljac: "UNIMAR RIJEKA d.o.o.",
+    oib: "95950787630",
     artikli: [],
   } as foo.IDocument;
   const firstPage = pages[0].pageData;
@@ -22,10 +23,6 @@ export const parseUnimar = (pages: Array<IPage>): foo.IDocument | any => {
   );
   if (brojRacuna)
     returnObject.broj_racuna = foo.extractTextFromWord(brojRacuna);
-
-  //first word with this regex is number of document
-  const [firstOib] = foo.findWordsInBoundsWithRegex(/^\d{11}$/, firstPage);
-  if (firstOib) returnObject.oib = foo.extractTextFromWord(firstOib);
 
   pages.forEach((page) => {
     const currentPage = page.pageData;

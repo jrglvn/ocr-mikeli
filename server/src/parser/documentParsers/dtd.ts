@@ -2,14 +2,11 @@ import * as foo from "./_shared";
 import { IPage } from "../";
 
 export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
-  let returnObject = { dobavljac: "DTD d.o.o", artikli: [] } as foo.IDocument;
-
-  //first word with this regex is number of document
-  const [firstOib] = foo.findWordsInBoundsWithRegex(
-    /^\d{11}$/,
-    pages[0].pageData
-  );
-  if (firstOib) returnObject.oib = foo.extractTextFromWord(firstOib);
+  let returnObject = {
+    dobavljac: "DTD d.o.o",
+    oib: "10601402342",
+    artikli: [],
+  } as foo.IDocument;
 
   //first occuring date is date of document
   const [firstDate] = foo.findWordsInBoundsWithRegex(
@@ -130,16 +127,6 @@ export const parseDtd = (pages: Array<IPage>): foo.IDocument | any => {
       //end
     });
   });
-
-  // console.log(
-  //   "ukupno: ",
-  //   returnObject.artikli.reduce(
-  //     (acc: number, current: foo.IArtikl) =>
-  //       acc +
-  //       (current!.kolicina! * current!.vpc! * (100 - current!.rabat!)) / 100,
-  //     0
-  //   )
-  // );
 
   return returnObject;
 };

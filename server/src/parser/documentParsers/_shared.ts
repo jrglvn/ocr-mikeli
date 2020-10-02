@@ -150,3 +150,22 @@ export const getBoundingBox = (
 
   return result;
 };
+
+export const documentToCSV = (ro: IDocument): string => {
+  let csv = [ro.dobavljac, ro.oib, ro.datum_racuna, ro.broj_racuna].join(";");
+  ro.artikli.forEach((a) => {
+    csv +=
+      "\n" +
+      [
+        a.naziv,
+        a.jmj,
+        a.bar_code,
+        a.kat_broj,
+        a.kolicina,
+        a.rabat,
+        a.vpc,
+        a.pdv_stopa,
+      ].join(";");
+  });
+  return csv;
+};
