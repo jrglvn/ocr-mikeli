@@ -169,3 +169,14 @@ export const documentToCSV = (ro: IDocument): string => {
   });
   return csv;
 };
+
+export const getWordObjectsFromPage = (pageData) => {
+  const words: Array<any> = [];
+
+  pageData.blocks.forEach((block) => {
+    block.paragraphs.forEach((paragraph) => {
+      paragraph.words.forEach((word) => words.push(word));
+    });
+  });
+  return words;
+};

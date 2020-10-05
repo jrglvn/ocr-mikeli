@@ -32,20 +32,25 @@ export async function parseDocument(file: {
       text: result.fullTextAnnotation.text,
     })
   );
-
   return [dispatch(pages), pages];
 }
 
-export type TKindOfDocument = "UNIMAR" | "VENICO" | "DTD" | "M.A.G.D.D.";
+export type TKindOfDocument =
+  | "UNIMAR"
+  | "VENICO"
+  | "DTD"
+  | "M.A.G.D.D."
+  | "MOTOMARINE";
 
 import { parseUnimar } from "./documentParsers/unimar";
 import { parseDtd } from "./documentParsers/dtd";
 import { parseMagdd } from "./documentParsers/magdd";
+import { parseMotomarine } from "./documentParsers/motomarine";
 
 export const dispatch = (pages: Array<IPage>): any => {
   let kind: TKindOfDocument | undefined;
 
-  const regex_result = pages[0].text.match(/(unimar|venico|dtd)/i);
+  const regex_result = pages[0].text.match(/(unimar|venico|dtd|motomarine)/i);
   if (regex_result) {
     kind = regex_result[0].toString().toUpperCase() as TKindOfDocument;
   }
@@ -59,5 +64,7 @@ export const dispatch = (pages: Array<IPage>): any => {
       return parseDtd(pages);
     case "M.A.G.D.D.":
       return parseMagdd(pages);
+    case "MOTOMARINE":
+      return parseMotomarine(pages);
   }
 };
