@@ -1,64 +1,46 @@
 import * as foo from "./_shared";
 import { IPage } from "../";
 
-export const parseMotomarine = (pages: Array<IPage>): foo.IDocument | any => {
+export const parseMotomarine = (file): foo.IDocument | any => {
   const date = new Date();
   let returnObject = {
     dobavljac: "MOTOMARINE S.r.l.",
     oib: "00968120329",
     artikli: [],
-    broj_racuna: date.getTime().toString(),
   } as foo.IDocument;
-  const firstPage = pages[0].pageData as IPage;
 
-  const firstPageWordObjects = foo.getWordObjectsFromPage(firstPage);
+  const lines: Array<string> = file.data.toString().split(/\r?\n/);
+  returnObject.broj_racuna = lines[1].split(";")[3].replace(/"/g, "");
+  returnObject.datum_racuna = lines[1]
+    .split(";")[2]
+    .replace(/["=]/g, "")
+    .replace(/-/g, ".");
 
-  //first occuring date is date of document
-  //broj racuna is always word before date
-  for (let i = 0; i < firstPageWordObjects.length; i++) {
-    const regexResult = foo
-      .extractTextFromWord(firstPageWordObjects[i])
-      .match(/(\d{1,2})\/(\d{2})\/(\d{2})/);
-    if (regexResult?.length) {
-      returnObject.datum_racuna =
-        regexResult[1] + "." + regexResult[2] + ".20" + regexResult[3];
-      returnObject.broj_racuna = foo.extractTextFromWord(
-        firstPageWordObjects[i - 1]
+  const JMJ_TRANSLATE = {
+    PZ: "kom",
+    CF: "pak",
+  };
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].split(";");
+
+    if (line?.length === 12) {
+      const currentArtikal = {} as foo.IArtikl;
+      currentArtikal.pdv_stopa = 25;
+      currentArtikal.rabat = 0;
+      currentArtikal.kat_broj = line[5].replace(/["=]/g, "");
+      currentArtikal.naziv = line[6].replace(/"/g, "");
+      currentArtikal.kolicina = parseFloat(
+        line[8].replace(/\./g, "").replace(",", ".")
       );
-      break;
+      currentArtikal.vpc = parseFloat(
+        line[9].replace(/\./g, "").replace(",", ".")
+      );
+      const jmj = line[7].replace(/"/g, "");
+      currentArtikal.jmj = JMJ_TRANSLATE[jmj];
+      returnObject.artikli.push(currentArtikal);
     }
   }
-
-  pages.forEach((page) => {
-    const currentPage = page.pageData;
-    //find words that should be art.number
-    const katBrojWords = foo.findWordsInBoundsWithRegex(
-      /^\d{7,10}/,
-      currentPage,
-      {
-        x1: 0,
-        x2: 0.15,
-        y1: 0.2,
-      }
-    );
-    katBrojWords?.forEach((currentWord) => {
-      let currentArtikl = {
-        bar_code: "",
-        jmj: "",
-        kat_broj: "",
-        naziv: "",
-        kolicina: -1,
-        rabat: -1,
-        vpc: -1,
-        pdv_stopa: 25,
-      } as foo.IArtikl;
-      const currentWordBoundingBox = foo.getBoundingBox(
-        currentWord,
-        currentPage
-      );
-      ///implement rest
-    });
-  });
 
   return returnObject;
 };
