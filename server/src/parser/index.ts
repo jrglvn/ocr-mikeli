@@ -56,7 +56,7 @@ import { parseMotomarine } from "./documentParsers/motomarine";
 export const dispatch = (pages: Array<IPage>): any => {
   let kind: TKindOfDocument | undefined;
 
-  const regex_result = pages[0].text.match(/(unimar|venico|dtd|motomarine)/i);
+  const regex_result = pages[0].text.match(/(unimar|venico|dtd)/i);
   if (regex_result) {
     kind = regex_result[0].toString().toUpperCase() as TKindOfDocument;
   }

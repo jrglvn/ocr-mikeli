@@ -28,6 +28,7 @@ export const parseMotomarine = (file): foo.IDocument | any => {
       const currentArtikal = {} as foo.IArtikl;
       currentArtikal.pdv_stopa = 25;
       currentArtikal.rabat = 0;
+      currentArtikal.bar_code = "";
       currentArtikal.kat_broj = line[5].replace(/["=]/g, "");
       currentArtikal.naziv = line[6].replace(/"/g, "");
       currentArtikal.kolicina = parseFloat(
@@ -38,6 +39,7 @@ export const parseMotomarine = (file): foo.IDocument | any => {
       );
       const jmj = line[7].replace(/"/g, "");
       currentArtikal.jmj = JMJ_TRANSLATE[jmj];
+
       returnObject.artikli.push(currentArtikal);
     }
   }
